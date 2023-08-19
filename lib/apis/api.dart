@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 class GoogleBooksApi {
   static String baseUrl = 'https://www.googleapis.com';
   static String volumePath = '$baseUrl/books/v1/volumes';
+  static List<String> urlQuery = [];
 
   static Future<List<Map<String, dynamic>>> getBook(String url) async {
     final Uri uri = Uri.parse(url);
@@ -18,7 +19,7 @@ class GoogleBooksApi {
     return results;
   }
 
-  static Future<List<Map<String, dynamic>>> getBooksByFields(
+  static Future<List<Map<String, dynamic>>?> getBooksByFields(
     String query, {
     String? searchTerm,
     int startIndex = 0,
@@ -37,7 +38,16 @@ class GoogleBooksApi {
       url += '&orderBy=newest';
     }
 
+    final int cutStringPosition = url.indexOf('&');
+    final String cutString = url.substring(cutStringPosition + 1);
+
+    if (urlQuery.contains(cutString)) {
+      return null;
+    }
+    urlQuery.add(cutString);
+
     final List<Map<String, dynamic>> results = await getBook(url);
+    print(url);
 
     return results;
   }

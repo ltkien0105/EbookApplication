@@ -7,7 +7,7 @@ import 'package:ebook_application/screen/home/book_details.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ebook_application/size_config.dart';
-import 'package:ebook_application/screen/home/category_list.dart';
+import 'package:ebook_application/screen/home/book_list.dart';
 import 'package:ebook_application/screen/home/components/list_horizontal.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,13 +32,13 @@ class _HomeState extends ConsumerState<Home>
   }) async {
     BooksNotifier booksNotifier = ref.read(booksProvider.notifier);
 
-    List<Map<String, dynamic>> listPopularBooks =
+    final List<Map<String, dynamic>>? listPopularBooks =
         await GoogleBooksApi.getBooksByFields(
       "''",
       maxResults: popularAmount,
     );
 
-    List<Map<String, dynamic>> listRecentBooks =
+    final List<Map<String, dynamic>>? listRecentBooks =
         await GoogleBooksApi.getBooksByFields(
       "",
       searchTerm: 'fiction',
@@ -47,8 +47,13 @@ class _HomeState extends ConsumerState<Home>
       isNewest: true,
     );
 
-    booksNotifier.addBookList(listPopularBooks, isPopular: true);
-    booksNotifier.addBookList(listRecentBooks, isRecent: true);
+    if (listPopularBooks != null) {
+      booksNotifier.addBookList(listPopularBooks, isPopular: true);
+    }
+
+    if (listRecentBooks != null) {
+      booksNotifier.addBookList(listRecentBooks, isRecent: true);
+    }
   }
 
   @override
@@ -200,8 +205,7 @@ class _HomeState extends ConsumerState<Home>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                const CategoryList(category: Category.education),
+            builder: (context) => const BookList(category: Category.education),
           ),
         );
       },

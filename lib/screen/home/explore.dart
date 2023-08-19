@@ -6,7 +6,7 @@ import 'package:ebook_application/apis/api.dart';
 import 'package:ebook_application/size_config.dart';
 import 'package:ebook_application/models/book.dart';
 import 'package:ebook_application/providers/books_provider.dart';
-import 'package:ebook_application/screen/home/category_list.dart';
+import 'package:ebook_application/screen/home/book_list.dart';
 import 'package:ebook_application/screen/home/components/list_horizontal.dart';
 
 class Explore extends ConsumerStatefulWidget {
@@ -38,13 +38,17 @@ class _ExploreState extends ConsumerState<Explore>
     BooksNotifier booksNotifier = ref.read(booksProvider.notifier);
 
     for (final category in categoryList) {
-      final listBookByCategory = await GoogleBooksApi.getBooksByFields(
+      final List<Map<String, dynamic>>? listBookByCategory =
+          await GoogleBooksApi.getBooksByFields(
         '',
         searchTerm: category.searchTerm,
         searchField: SearchFields.subject,
         maxResults: 7,
       );
-      booksNotifier.addBookList(listBookByCategory);
+
+      if (listBookByCategory != null) {
+        booksNotifier.addBookList(listBookByCategory);
+      }
     }
   }
 
@@ -91,7 +95,7 @@ class _ExploreState extends ConsumerState<Explore>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => CategoryList(
+                                  builder: (context) => BookList(
                                     category: categoryList[index],
                                   ),
                                 ),

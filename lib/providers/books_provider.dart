@@ -9,12 +9,10 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     state = [...state, book];
   }
 
-  void addBookList(
-    List<Map<String, dynamic>> listBooks, {
+  void addBookList(List<Map<String, dynamic>> listBooks, {
     bool isPopular = false,
     bool isRecent = false,
   }) {
-    bool isExisted = false;
     for (var i = 0; i < listBooks.length; i++) {
       final book = listBooks[i];
       Book bookAdded = Book.fromJson(
@@ -35,27 +33,18 @@ class BooksNotifier extends StateNotifier<List<Book>> {
               : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
         },
       );
-      for (var bookIndex in state) {
-        if (bookIndex.id == bookAdded.id) {
-          isExisted = true;
-        }
-      }
 
-      if (!isExisted) {
-        bookAdded.isPopular = isPopular;
-        bookAdded.isRecent = isRecent;
-        add(bookAdded);
-      }
+      bookAdded.isPopular = isPopular;
+      bookAdded.isRecent = isRecent;
+      add(bookAdded);
     }
   }
 
-  void update(
-    String id,
-    String title,
-    String author,
-    String description,
-    String imageUrl,
-  ) {
+  void update(String id,
+      String title,
+      String author,
+      String description,
+      String imageUrl,) {
     // state = [
     //   for (final book in state)
     //     if (book.id == id)
@@ -87,5 +76,5 @@ class BooksNotifier extends StateNotifier<List<Book>> {
 }
 
 final booksProvider = StateNotifierProvider<BooksNotifier, List<Book>>(
-  (ref) => BooksNotifier(),
+      (ref) => BooksNotifier(),
 );

@@ -96,7 +96,7 @@ class _BookDetailsState extends State<BookDetails> {
                                     getProportionateScreenHeight(8),
                                 crossAxisSpacing:
                                     getProportionateScreenWidth(4),
-                                children: [
+                                children: const [
                                   CategoryBox(category: 'hehe'),
                                   CategoryBox(category: 'hehe'),
                                 ],
