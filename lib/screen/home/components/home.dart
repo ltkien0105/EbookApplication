@@ -4,6 +4,7 @@ import 'package:ebook_application/apis/api.dart';
 import 'package:ebook_application/models/book.dart';
 import 'package:ebook_application/providers/books_provider.dart';
 import 'package:ebook_application/screen/home/book_details.dart';
+import 'package:ebook_application/screen/home/category_list.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ebook_application/size_config.dart';
@@ -25,6 +26,16 @@ class _HomeState extends ConsumerState<Home>
 
   @override
   bool get wantKeepAlive => true;
+
+  List<Category> categoryList = [
+    Category.business,
+    Category.drama,
+    Category.economics,
+    Category.computer,
+    Category.fiction,
+    Category.medical,
+    Category.techEngineering,
+  ];
 
   Future<void> getDataToHomePage({
     required int popularAmount,
@@ -108,14 +119,33 @@ class _HomeState extends ConsumerState<Home>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              SizedBox(
-                                width: double.infinity,
-                                child: Text(
-                                  'Categories',
-                                  textAlign: TextAlign.start,
-                                  style: TextStyle(
-                                    fontSize: getProportionateScreenWidth(20),
-                                  ),
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Categories',
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize:
+                                            getProportionateScreenWidth(20),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const CategoryList(),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(
+                                          Icons.arrow_forward_outlined),
+                                    ),
+                                  ],
                                 ),
                               ),
                               // const Spacer(),
@@ -127,9 +157,9 @@ class _HomeState extends ConsumerState<Home>
                                     width: getProportionateScreenWidth(10),
                                   ),
                                   scrollDirection: Axis.horizontal,
-                                  itemCount: 7,
+                                  itemCount: categoryList.length,
                                   itemBuilder: (context, index) =>
-                                      filterButton('Short Stories'),
+                                      filterButton(categoryList[index]),
                                 ),
                               )
                             ],
@@ -199,13 +229,13 @@ class _HomeState extends ConsumerState<Home>
         });
   }
 
-  ElevatedButton filterButton(String type) {
+  ElevatedButton filterButton(Category category) {
     return ElevatedButton(
       onPressed: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const BookList(category: Category.education),
+            builder: (context) => BookList(category: category),
           ),
         );
       },
@@ -217,7 +247,7 @@ class _HomeState extends ConsumerState<Home>
         ),
       ),
       child: Text(
-        type,
+        category.specificName,
       ),
     );
   }

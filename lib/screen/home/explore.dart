@@ -111,7 +111,7 @@ class _ExploreState extends ConsumerState<Explore>
                               .where((book) => book.categories
                                   .join(' ')
                                   .toLowerCase()
-                                  .contains(categoryList[index].searchTerm!))
+                                  .contains(categoryList[index].searchTerm))
                               .toList(),
                         ),
                       ),

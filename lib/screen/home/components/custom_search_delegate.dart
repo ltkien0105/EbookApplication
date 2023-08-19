@@ -5,36 +5,19 @@ import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
 
-import 'package:ebook_application/apis/api.dart';
-
 class CustomSearchDelegate extends SearchDelegate {
-  SearchFields searchFieldsValue = SearchFields.intitle;
   List<String>? results;
 
   Future<void> getResults() async {
-    late final String fieldGetData;
-
-    if (searchFieldsValue == SearchFields.intitle) {
-      fieldGetData = 'title';
-    } else {
-      fieldGetData = 'authors';
-    }
-
     final url = Uri.parse(
-        'https://www.googleapis.com/books/v1/volumes?fields=items/volumeInfo/$fieldGetData&q=${searchFieldsValue.name}:$query&maxResults=10');
+        'https://www.googleapis.com/books/v1/volumes?fields=items/volumeInfo/title&q=$query&maxResults=10');
 
     final data = await http.get(url);
     final response = data.body;
 
-    if (searchFieldsValue == SearchFields.intitle) {
-      results = List<String>.from(json
-          .decode(response)['items']
-          .map((item) => item['volumeInfo'][fieldGetData]));
-    } else {
-      results = List<String>.from(json
-          .decode(response)['items']
-          .map((item) => item['volumeInfo']['authors'][0]));
-    }
+    results = List<String>.from(json
+        .decode(response)['items']
+        .map((item) => item['volumeInfo']['title']));
   }
 
   @override
@@ -60,11 +43,19 @@ class CustomSearchDelegate extends SearchDelegate {
   }
 
   @override
-  Widget buildResults(BuildContext context) {
-    return IconButton(
-      onPressed: () {},
-      icon: const Icon(Icons.clear),
+  Widget buildResults(BuildContext context) => Container();
+
+  @override
+  void showResults(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookList(
+          searchTerm: query,
+        ),
+      ),
     );
+    super.showResults(context);
   }
 
   @override

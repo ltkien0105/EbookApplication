@@ -1,6 +1,7 @@
 import 'package:ebook_application/apis/api.dart';
 import 'package:ebook_application/providers/books_provider.dart';
 import 'package:ebook_application/screen/home/book_details.dart';
+import 'package:ebook_application/screen/home/components/custom_search_delegate.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 import 'package:ebook_application/size_config.dart';
 import 'package:flutter/material.dart';
@@ -54,11 +55,10 @@ class _BookListState extends ConsumerState<BookList> {
     if (isCategory) {
       showedList = ref
           .watch(booksProvider)
-          .where((book) =>
-          book.categories
+          .where((book) => book.categories
               .join(' ')
               .toLowerCase()
-              .contains(widget.category!.searchTerm!))
+              .contains(widget.category!.searchTerm))
           .toList();
     } else {
       final splitSearchTerm = widget.searchTerm!.split(' ');
@@ -105,11 +105,10 @@ class _BookListState extends ConsumerState<BookList> {
       setState(() {
         showedList = ref
             .watch(booksProvider)
-            .where((book) =>
-            book.categories
+            .where((book) => book.categories
                 .join(' ')
                 .toLowerCase()
-                .contains(widget.category!.searchTerm!))
+                .contains(widget.category!.searchTerm))
             .toList();
       });
     } else {
@@ -150,11 +149,21 @@ class _BookListState extends ConsumerState<BookList> {
       appBar: AppBar(
         title: Text(
           isCategory ? widget.category!.specificName : widget.searchTerm!,
-          style: TextStyle(
-            fontSize: getProportionateScreenWidth(25),
+          style: const TextStyle(
+            fontSize: 25,
           ),
         ),
-        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: CustomSearchDelegate(),
+              );
+            },
+            icon: const Icon(Icons.search),
+          ),
+        ],
       ),
       body: FutureBuilder(
           future: myFuture,
@@ -166,8 +175,7 @@ class _BookListState extends ConsumerState<BookList> {
                   child: ListView.separated(
                       controller: scrollController,
                       itemCount: showedList.length + 1,
-                      separatorBuilder: (context, index) =>
-                          SizedBox(
+                      separatorBuilder: (context, index) => SizedBox(
                             height: getProportionateScreenHeight(6),
                           ),
                       itemBuilder: (context, index) {
@@ -177,10 +185,9 @@ class _BookListState extends ConsumerState<BookList> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      BookDetails(
-                                        book: showedList[index],
-                                      ),
+                                  builder: (context) => BookDetails(
+                                    book: showedList[index],
+                                  ),
                                 ),
                               );
                             },
