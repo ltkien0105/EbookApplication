@@ -1,3 +1,4 @@
+import 'package:ebook_application/models/message.dart';
 import 'package:flutter/material.dart';
 
 //Cloud firestore
@@ -15,6 +16,12 @@ FirebaseFirestore firestore = FirebaseFirestore.instance;
 //Google API key
 String androidApiKey = 'AIzaSyCjG2bvfNfXnyQgK8Q88HR8w2bnekD0f_E';
 String iosApiKey = 'AIzaSyCK7sunNqV6dUfswngY1ALs5IaxbEawNAY';
+
+//OpenAI API key
+String openAiAPIKey = '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';
+
+//Message History
+final List<Message> messageHistory = [];
 
 //Custom snackbar
 extension ShowSnackbar on BuildContext {

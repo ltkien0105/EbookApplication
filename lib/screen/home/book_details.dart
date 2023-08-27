@@ -1,22 +1,74 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:ebook_application/apis/api.dart';
 import 'package:ebook_application/models/book.dart';
 import 'package:ebook_application/size_config.dart';
+import 'package:ebook_application/providers/books_provider.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 
 import 'components/category_box.dart';
 
-class BookDetails extends StatefulWidget {
+class BookDetails extends ConsumerStatefulWidget {
   const BookDetails({super.key, required this.book});
 
   final Book book;
 
   @override
-  State<BookDetails> createState() => _BookDetailsState();
+  ConsumerState<BookDetails> createState() => _BookDetailsState();
 }
 
-class _BookDetailsState extends State<BookDetails> {
+class _BookDetailsState extends ConsumerState<BookDetails> {
   bool isFavorite = false;
+  late List<Book> showedList;
+  late Future myFuture;
+
+  List<String> getCategoryHandled() {
+    if (widget.book.categories.isNotEmpty) {
+      return widget.book.categories.map((category) {
+        if (category.contains('(')) {
+          return category.substring(0, category.indexOf('(') - 1);
+        }
+
+        if (category.contains('/')) {
+          return category.substring(0, category.indexOf('/') - 1);
+        }
+
+        return category;
+      }).toList();
+    }
+    return [];
+  }
+
+  Future<void> fetchData() async {
+    BooksNotifier booksNotifier = ref.read(booksProvider.notifier);
+
+    List<Map<String, dynamic>>? listBook;
+
+    listBook = await GoogleBooksApi.getBooksByFields(
+      '',
+      searchTerm: widget.book.authors[0],
+      searchField: SearchFields.inauthor,
+      maxResults: 5,
+    );
+
+    if (listBook != null) {
+      booksNotifier.addBookList(listBook);
+    }
+
+    showedList = ref
+        .watch(booksProvider)
+        .where((book) => book.authors.contains(widget.book.authors[0]))
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    myFuture = fetchData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +148,10 @@ class _BookDetailsState extends State<BookDetails> {
                                     getProportionateScreenHeight(8),
                                 crossAxisSpacing:
                                     getProportionateScreenWidth(4),
-                                children: const [
-                                  CategoryBox(category: 'hehe'),
-                                  CategoryBox(category: 'hehe'),
-                                ],
+                                children: getCategoryHandled()
+                                    .map((category) =>
+                                        CategoryBox(category: category))
+                                    .toList(),
                               ),
                             ),
                           ],
@@ -174,22 +226,34 @@ class _BookDetailsState extends State<BookDetails> {
                       SizedBox(
                         height: getProportionateScreenHeight(8),
                       ),
-                      Expanded(
-                        child: ListView.separated(
-                            separatorBuilder: (context, index) => SizedBox(
+                      FutureBuilder(
+                        future: myFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return Expanded(
+                              child: ListView.separated(
+                                separatorBuilder: (context, index) => SizedBox(
                                   height: getProportionateScreenHeight(8),
                                 ),
-                            itemCount: 10,
-                            itemBuilder: (context, index) {
-                              return const SummaryInfoBook(
-                                title: 'dsds',
-                                authors: [],
-                                description: 'dsdsdsds dsdsd dsdsd dsdsd',
-                                imgUrl:
-                                    'https://covers.feedbooks.net/item/4688398.jpg?size=large&t=1659487707',
-                              );
-                            }),
-                      ),
+                                itemCount: showedList.length,
+                                itemBuilder: (context, index) {
+                                  return SummaryInfoBook(
+                                    title: showedList[index].title,
+                                    authors: showedList[index].authors,
+                                    description: showedList[index].description,
+                                    imgUrl: showedList[index].imageUrl,
+                                  );
+                                },
+                              ),
+                            );
+                          }
+
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                      )
                     ],
                   ),
                 ),

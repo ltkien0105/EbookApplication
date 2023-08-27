@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ebook_application/constants.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +23,24 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
   late TextEditingController emailController;
   late DateTime birthday;
 
+  Map<String, dynamic> userData = {
+    'id': '',
+    'fullName': '',
+    'email': '',
+    'photoUrl': ''
+  };
+
+  void getUserData() {
+    if (auth.currentUser != null) {
+      userData = {
+        'id': auth.currentUser!.uid,
+        'fullName': auth.currentUser!.displayName,
+        'email': auth.currentUser!.email,
+        'photoUrl': auth.currentUser!.photoURL
+      };
+    }
+  }
+
   void getBirthday(DateTime chosenBirthday) {
     birthday = chosenBirthday;
   }
@@ -34,9 +54,17 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    getUserData();
+  }
+
+  @override
   void dispose() {
     fullnameController.dispose();
     emailController.dispose();
+
     super.dispose();
   }
 
@@ -46,8 +74,8 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
     final user = ref.watch(usersNotifierProvider);
 
     void assignValue() {
-      fullnameController = TextEditingController(text: user.fullname);
-      emailController = TextEditingController(text: user.email);
+      fullnameController = TextEditingController(text: userData['fullName']);
+      emailController = TextEditingController(text: userData['email']);
       birthday = user.birthday;
     }
 
@@ -97,12 +125,16 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
                             children: [
-                              const Center(
+                              Center(
                                 child: Column(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor: Colors.black,
+                                      // backgroundColor: Colors.black,
                                       radius: 40,
+                                      foregroundImage:
+                                          CachedNetworkImageProvider(
+                                        userData['photoUrl'],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -134,7 +166,7 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
                                     const SizedBox(height: 16),
                                     InputField(
                                       controller: emailController,
-                                      label: 'Email',
+                                      label: userData['email'],
                                       validator: (email) {
                                         if (email == null || email.isEmpty) {
                                           return 'Email is required';
