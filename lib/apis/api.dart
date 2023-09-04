@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ebook_application/constants.dart';
 import 'package:http/http.dart' as http;
 
 class GoogleBooksApi {
@@ -19,8 +20,7 @@ class GoogleBooksApi {
     return results;
   }
 
-  static Future<List<Map<String, dynamic>>?> getBooksByFields(
-    String query, {
+  static Future<List<Map<String, dynamic>>?> getBooksByFields(String query, {
     String? searchTerm,
     int startIndex = 0,
     int maxResults = 10,
@@ -28,7 +28,8 @@ class GoogleBooksApi {
     bool isNewest = false,
   }) async {
     String url =
-        '$volumePath?fields=items(id,volumeInfo(title,authors,description,categories,imageLinks/thumbnail))&q=${query.trim()}';
+        '$volumePath?fields=items(id,volumeInfo(title,authors,description,categories,imageLinks/thumbnail))&q=${query
+        .trim()}';
     if (searchField != null) {
       url += '+${searchField.name}:${searchTerm!.trim()}';
     }
@@ -37,6 +38,7 @@ class GoogleBooksApi {
     if (isNewest) {
       url += '&orderBy=newest';
     }
+    url += '&key=$androidApiKey';
 
     final int cutStringPosition = url.indexOf('&');
     final String cutString = url.substring(cutStringPosition + 1);
@@ -45,9 +47,7 @@ class GoogleBooksApi {
       return null;
     }
     urlQuery.add(cutString);
-
     final List<Map<String, dynamic>> results = await getBook(url);
-    print(url);
 
     return results;
   }

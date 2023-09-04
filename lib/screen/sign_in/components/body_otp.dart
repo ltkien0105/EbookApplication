@@ -110,13 +110,20 @@ class _BodyOtpState extends State<BodyOtp> {
                             final user = userCredential.user;
                             final userMetaData = widget.userMetaData;
                             if (userMetaData != null) {
-                              await firestore.collection('accounts').doc(userMetaData['username']).set({
+                              await firestore
+                                  .collection('accounts')
+                                  .doc(userMetaData['username'])
+                                  .set({
                                 'creation_time': user!.metadata.creationTime,
                                 'password': null,
                               });
 
-                              await firestore.collection('users').doc(user.uid).set({
-                                'username': firestore.doc('accounts/${userMetaData['username']}'),
+                              await firestore
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .set({
+                                'username': firestore.doc(
+                                    'accounts/${userMetaData['username']}'),
                                 'birthday': userMetaData['birthday'],
                                 'email': null,
                                 'phone_number': user.phoneNumber,
@@ -131,8 +138,6 @@ class _BodyOtpState extends State<BodyOtp> {
                           context.showErrorMessage(
                               'Verification code is incorrect');
                         }
-                      } catch (error) {
-                        print(error);
                       } finally {
                         setState(() {
                           _isLoading = false;

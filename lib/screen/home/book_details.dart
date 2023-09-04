@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ebook_application/constants.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +22,6 @@ class BookDetails extends ConsumerStatefulWidget {
 }
 
 class _BookDetailsState extends ConsumerState<BookDetails> {
-  bool isFavorite = false;
   late List<Book> showedList;
   late Future myFuture;
 
@@ -63,6 +64,20 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
         .toList();
   }
 
+  Future<bool> checkFavoriteStatus() async {
+    DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await firestore.doc('libraries/${auth.currentUser!.uid}').get();
+
+    if (!snapshot.exists) {
+      return false;
+    } else {
+      List<String> listFavorites =
+          List<String>.from(snapshot['books'].map((book) => book));
+
+      return listFavorites.contains(widget.book.id);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -82,12 +97,50 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
             child: InkWell(
               onTap: () {
                 setState(() {
-                  isFavorite = !isFavorite;
+                  widget.book.isFavorite = !widget.book.isFavorite;
                 });
+
+                if (widget.book.isFavorite) {
+                  firestore
+                      .doc('libraries/${auth.currentUser!.uid}')
+                      .get()
+                      .then((snapshot) {
+                    if (!snapshot.exists) {
+                      firestore.doc('libraries/${auth.currentUser!.uid}').set({
+                        'books': [widget.book.id]
+                      });
+                    } else {
+                      firestore
+                          .doc('libraries/${auth.currentUser!.uid}')
+                          .update({
+                        'books': FieldValue.arrayUnion([widget.book.id])
+                      });
+                    }
+                  });
+                } else {
+                  firestore.doc('libraries/${auth.currentUser!.uid}').update({
+                    'books': FieldValue.arrayRemove([widget.book.id])
+                  });
+                }
               },
-              child: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border_outlined,
-                size: getProportionateScreenWidth(30),
+              child: FutureBuilder(
+                future: checkFavoriteStatus(),
+                builder:
+                    (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.data) {
+                      return Icon(
+                        Icons.favorite,
+                        size: getProportionateScreenWidth(30),
+                      );
+                    }
+                  }
+
+                  return Icon(
+                    Icons.favorite_border_outlined,
+                    size: getProportionateScreenWidth(30),
+                  );
+                },
               ),
             ),
           ),

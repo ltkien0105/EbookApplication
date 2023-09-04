@@ -94,7 +94,6 @@ class _HomeState extends ConsumerState<Home>
                 .where((book) =>
                     book.isRecent && book.imageUrl.contains('books.google.com'))
                 .toList();
-
             return WillPopScope(
               onWillPop: () {
                 exit(0);

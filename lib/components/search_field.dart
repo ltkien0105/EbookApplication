@@ -1,4 +1,3 @@
-import 'package:ebook_application/constants.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ebook_application/screen/home/components/custom_search_delegate.dart';
@@ -41,7 +40,6 @@ class SearchField extends StatelessWidget {
             ),
           ),
           onTap: () {
-            print(auth.currentUser);
             showSearch(
               context: context,
               delegate: CustomSearchDelegate(),

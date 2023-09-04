@@ -49,6 +49,8 @@ class Book {
     required this.imageUrl,
     this.isPopular = false,
     this.isRecent = false,
+    this.isFavorite = false,
+
   });
 
   @HiveField(0)
@@ -78,7 +80,11 @@ class Book {
   @HiveField(7)
   bool isRecent;
 
-  factory Book.fromJson(Map<String, dynamic> json) => Book(
+  @HiveField(8)
+  bool isFavorite;
+
+  factory Book.fromJson(Map<String, dynamic> json) =>
+      Book(
         id: json['id'] as String,
         title: json['title'] as String,
         authors: List<String>.from(json['authors'].map((x) => x)),

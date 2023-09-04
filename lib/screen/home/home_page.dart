@@ -1,6 +1,6 @@
+import 'package:ebook_application/constants.dart';
 import 'package:flutter/material.dart';
 
-import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/screen/home/explore.dart';
 import 'package:ebook_application/components/search_field.dart';
 import 'package:ebook_application/screen/home/chat_screen.dart';
@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   late List<Widget> _pages;
   late PageController _pageController;
 
-  late String imgUrl =
+  String? imgUrl =
       'http://books.google.com/books/content?id=Pv1eUCKdP-QC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api';
 
   @override
@@ -28,7 +28,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     if (auth.currentUser != null) {
-      imgUrl = auth.currentUser!.photoURL!;
+      if (auth.currentUser!.photoURL != null) {
+        imgUrl = auth.currentUser!.photoURL;
+      }
     }
 
     _selectedPageIndex = 0;
@@ -58,7 +60,7 @@ class _HomePageState extends State<HomePage> {
               : null,
           actions: _selectedPageIndex != 3
               ? [
-                  SearchField(imgUrl),
+                  SearchField(imgUrl!),
                 ]
               : null,
           automaticallyImplyLeading: false,

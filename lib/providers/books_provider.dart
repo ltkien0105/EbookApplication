@@ -9,7 +9,8 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     state = [...state, book];
   }
 
-  void addBookList(List<Map<String, dynamic>> listBooks, {
+  void addBookList(
+    List<Map<String, dynamic>> listBooks, {
     bool isPopular = false,
     bool isRecent = false,
   }) {
@@ -40,11 +41,13 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     }
   }
 
-  void update(String id,
-      String title,
-      String author,
-      String description,
-      String imageUrl,) {
+  void update(
+    String id,
+    String title,
+    String author,
+    String description,
+    String imageUrl,
+  ) {
     // state = [
     //   for (final book in state)
     //     if (book.id == id)
@@ -56,6 +59,13 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     //     else
     //       book
     // ];
+  }
+
+  void updateFavoriteStatus(Book bookUpdated) {
+    state = [
+      for (final book in state)
+        if (book.id == bookUpdated.id) bookUpdated else book
+    ];
   }
 
   void remove(Book book) {
@@ -76,5 +86,5 @@ class BooksNotifier extends StateNotifier<List<Book>> {
 }
 
 final booksProvider = StateNotifierProvider<BooksNotifier, List<Book>>(
-      (ref) => BooksNotifier(),
+  (ref) => BooksNotifier(),
 );
