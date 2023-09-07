@@ -22,11 +22,9 @@ class CategoryBox extends StatelessWidget {
         );
       },
       child: Container(
-        height: getProportionateScreenHeight(5),
-        width: getProportionateScreenWidth(10),
         alignment: Alignment.center,
         padding: EdgeInsets.all(
-          getProportionateScreenWidth(1),
+          getProportionateScreenWidth(2),
         ),
         decoration: BoxDecoration(
           border: Border.all(
@@ -35,7 +33,10 @@ class CategoryBox extends StatelessWidget {
           shape: BoxShape.rectangle,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(category),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(category),
+        ),
       ),
     );
   }

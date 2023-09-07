@@ -24,6 +24,9 @@ class BookDetails extends ConsumerStatefulWidget {
 class _BookDetailsState extends ConsumerState<BookDetails> {
   late List<Book> showedList;
   late Future myFuture;
+  bool isFavorite = false;
+  bool isFirstLoad = false;
+  bool isExpanded = false;
 
   List<String> getCategoryHandled() {
     if (widget.book.categories.isNotEmpty) {
@@ -62,19 +65,20 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
         .watch(booksProvider)
         .where((book) => book.authors.contains(widget.book.authors[0]))
         .toList();
+    showedList = booksNotifier.removeDuplicate(showedList);
+    showedList.removeAt(0);
   }
 
-  Future<bool> checkFavoriteStatus() async {
+  Future<void> checkFavoriteStatus() async {
     DocumentSnapshot<Map<String, dynamic>> snapshot =
         await firestore.doc('libraries/${auth.currentUser!.uid}').get();
 
-    if (!snapshot.exists) {
-      return false;
-    } else {
+    if (snapshot.exists) {
       List<String> listFavorites =
           List<String>.from(snapshot['books'].map((book) => book));
 
-      return listFavorites.contains(widget.book.id);
+      isFavorite = listFavorites.contains(widget.book.id);
+      isFirstLoad = true;
     }
   }
 
@@ -97,10 +101,10 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
             child: InkWell(
               onTap: () {
                 setState(() {
-                  widget.book.isFavorite = !widget.book.isFavorite;
+                  isFavorite = !isFavorite;
                 });
 
-                if (widget.book.isFavorite) {
+                if (isFavorite) {
                   firestore
                       .doc('libraries/${auth.currentUser!.uid}')
                       .get()
@@ -124,13 +128,19 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
                 }
               },
               child: FutureBuilder(
-                future: checkFavoriteStatus(),
+                future: !isFirstLoad ? checkFavoriteStatus() : null,
                 builder:
                     (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.data) {
+                  if (snapshot.connectionState == ConnectionState.done ||
+                      snapshot.connectionState == ConnectionState.none) {
+                    if (isFavorite) {
                       return Icon(
                         Icons.favorite,
+                        size: getProportionateScreenWidth(30),
+                      );
+                    } else {
+                      return Icon(
+                        Icons.favorite_border_outlined,
                         size: getProportionateScreenWidth(30),
                       );
                     }
@@ -216,9 +226,10 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
                 SizedBox(
                   height: getProportionateScreenHeight(30),
                 ),
-                SizedBox(
-                  width: SizeConfig.screenWidth,
-                  height: SizeConfig.screenHeight! * .25,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: double.infinity,
+                  ),
                   child: Column(
                     children: [
                       SizedBox(
@@ -248,9 +259,25 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
                           style: TextStyle(
                             fontSize: getProportionateScreenWidth(15),
                           ),
-                          maxLines: 8,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: isExpanded ? null : 8,
+                          overflow: isExpanded ? null : TextOverflow.ellipsis,
                         ),
+                      ),
+                      SizedBox(
+                        width: SizeConfig.screenWidth,
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              isExpanded = !isExpanded;
+                            });
+                          },
+                          icon: Icon(isExpanded
+                              ? Icons.arrow_circle_up
+                              : Icons.arrow_circle_down),
+                        ),
+                      ),
+                      SizedBox(
+                        height: getProportionateScreenHeight(8),
                       ),
                     ],
                   ),

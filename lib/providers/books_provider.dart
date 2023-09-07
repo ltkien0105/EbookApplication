@@ -9,8 +9,7 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     state = [...state, book];
   }
 
-  void addBookList(
-    List<Map<String, dynamic>> listBooks, {
+  void addBookList(List<Map<String, dynamic>> listBooks, {
     bool isPopular = false,
     bool isRecent = false,
   }) {
@@ -41,13 +40,11 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     }
   }
 
-  void update(
-    String id,
-    String title,
-    String author,
-    String description,
-    String imageUrl,
-  ) {
+  void update(String id,
+      String title,
+      String author,
+      String description,
+      String imageUrl,) {
     // state = [
     //   for (final book in state)
     //     if (book.id == id)
@@ -64,7 +61,8 @@ class BooksNotifier extends StateNotifier<List<Book>> {
   void updateFavoriteStatus(Book bookUpdated) {
     state = [
       for (final book in state)
-        if (book.id == bookUpdated.id) bookUpdated else book
+        if (book.id == bookUpdated.id) bookUpdated else
+          book
     ];
   }
 
@@ -83,8 +81,22 @@ class BooksNotifier extends StateNotifier<List<Book>> {
       return false;
     }
   }
+
+  List<Book> removeDuplicate(List<Book> listBook) {
+    for (var i = 0; i < listBook.length; i++) {
+      final currentBook = listBook[i];
+      for (var j = i; j < listBook.length; j++) {
+        final nextBook = listBook[j];
+        if (currentBook.id == nextBook.id && i != j) {
+          listBook.remove(nextBook);
+        }
+      }
+    }
+
+    return listBook;
+  }
 }
 
 final booksProvider = StateNotifierProvider<BooksNotifier, List<Book>>(
-  (ref) => BooksNotifier(),
+      (ref) => BooksNotifier(),
 );
