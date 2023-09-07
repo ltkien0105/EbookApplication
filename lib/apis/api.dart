@@ -14,13 +14,18 @@ class GoogleBooksApi {
     final data = await http.get(uri);
     final response = data.body;
 
+    if (!json.decode(response).containsKey("items")) {
+      return [json.decode(response)["volumeInfo"]];
+    }
+
     final List<Map<String, dynamic>> results = List<Map<String, dynamic>>.from(
         json.decode(response)['items'].map((item) => item));
 
     return results;
   }
 
-  static Future<List<Map<String, dynamic>>?> getBooksByFields(String query, {
+  static Future<List<Map<String, dynamic>>?> getBooksByFields(
+    String query, {
     String? searchTerm,
     int startIndex = 0,
     int maxResults = 10,
@@ -28,8 +33,7 @@ class GoogleBooksApi {
     bool isNewest = false,
   }) async {
     String url =
-        '$volumePath?fields=items(id,volumeInfo(title,authors,description,categories,imageLinks/thumbnail))&q=${query
-        .trim()}';
+        '$volumePath?fields=items(id,volumeInfo(title,authors,description,categories,imageLinks/thumbnail))&q=${query.trim()}';
     if (searchField != null) {
       url += '+${searchField.name}:${searchTerm!.trim()}';
     }
@@ -52,13 +56,13 @@ class GoogleBooksApi {
     return results;
   }
 
-  static Future<List<Map<String, dynamic>>> getBookById(String id) async {
+  static Future<Map<String, dynamic>> getBookById(String id) async {
     String url =
         '$volumePath/$id?fields=volumeInfo(title,authors,description,categories,imageLinks/thumbnail)';
 
     final List<Map<String, dynamic>> results = await getBook(url);
 
-    return results;
+    return results[0];
   }
 }
 

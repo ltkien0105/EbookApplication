@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ebook_application/screen/home/book_details.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ebook_application/size_config.dart';
@@ -22,12 +23,15 @@ class SummaryInfoBook extends StatelessWidget {
     String showAuthors = authors.join(', ');
     return Row(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: CachedNetworkImage(
-            imageUrl: imgUrl,
-            fit: BoxFit.fill,
-            width: 130,
+        Card(
+          elevation: 16,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: CachedNetworkImage(
+              imageUrl: imgUrl,
+              fit: BoxFit.fill,
+              width: 130,
+            ),
           ),
         ),
         SizedBox(
