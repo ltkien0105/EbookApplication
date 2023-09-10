@@ -143,7 +143,51 @@ class _HomePageState extends State<HomePage> {
                 backgroundColor: Colors.blue,
                 child: Image.asset('assets/icons/chatbot.png'),
               )
-            : null,
+            : _selectedPageIndex == 2
+                ? FloatingActionButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) {
+                          final TextEditingController shelfNameController =
+                              TextEditingController();
+
+                          return AlertDialog(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                TextField(
+                                  controller: shelfNameController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Shelf name',
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    firestore
+                                        .doc(
+                                            'libraries/${auth.currentUser!.uid}')
+                                        .collection('shelves')
+                                        .doc(shelfNameController.text)
+                                        .set({
+                                      "booksID": [],
+                                    }).then((_) {
+                                      Navigator.pop(context);
+                                    });
+                                  },
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    backgroundColor: Colors.blue,
+                    child: Image.asset('assets/icons/chatbot.png'),
+                  )
+                : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: PageView(
           controller: _pageController,

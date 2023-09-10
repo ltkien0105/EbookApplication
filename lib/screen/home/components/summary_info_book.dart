@@ -139,23 +139,46 @@ class _SummaryInfoBookState extends State<SummaryInfoBook> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: listShelves.map((shelfId) {
                                   return StatefulBuilder(
-                                    builder: (BuildContext context,
-                                        void Function(void Function())
-                                            setState) {
+                                    builder: (
+                                      BuildContext context,
+                                      void Function(void Function()) setState,
+                                    ) {
                                       return ListTile(
                                         leading: Checkbox(
                                           value: listContainThisBook
                                               .contains(shelfId),
-                                          onChanged: (newValue) {
+                                          onChanged: (newValue) async {
                                             if (newValue == true) {
                                               setState(() {
                                                 listContainThisBook
                                                     .add(shelfId);
                                               });
+
+                                              await firestore
+                                                  .doc(
+                                                      "libraries/${auth.currentUser!.uid}")
+                                                  .collection("shelves")
+                                                  .doc(shelfId)
+                                                  .update({
+                                                "booksID":
+                                                    FieldValue.arrayUnion(
+                                                        [widget.id])
+                                              });
                                             } else {
                                               setState(() {
                                                 listContainThisBook
                                                     .remove(shelfId);
+                                              });
+
+                                              await firestore
+                                                  .doc(
+                                                      "libraries/${auth.currentUser!.uid}")
+                                                  .collection("shelves")
+                                                  .doc(shelfId)
+                                                  .update({
+                                                "booksID":
+                                                    FieldValue.arrayRemove(
+                                                        [widget.id])
                                               });
                                             }
                                           },

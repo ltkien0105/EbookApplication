@@ -32,7 +32,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         .get();
 
     final listIDShelves = snapshot.docs.map((doc) => doc.id).toList();
-
+    List<Map<String, dynamic>> listShelvesTemp = [];
     await Future.forEach(listIDShelves, (shelfID) async {
       DocumentSnapshot<Map<String, dynamic>> snapshot = await firestore
           .doc('libraries/${auth.currentUser!.uid}')
@@ -52,7 +52,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         urlAvatarShelf =
             json.decode(response.body)["volumeInfo"]["imageLinks"]["thumbnail"];
       }
-      listShelves.add({shelfID: booksID, "urlAvatarShelf": urlAvatarShelf});
+
+      listShelvesTemp.add({shelfID: booksID, "urlAvatarShelf": urlAvatarShelf});
+    });
+    setState(() {
+      listShelves = listShelvesTemp;
     });
   }
 
@@ -60,7 +64,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     DocumentSnapshot<Map<String, dynamic>> booksID =
         await firestore.doc("libraries/${auth.currentUser!.uid}").get();
     final data = booksID.data();
-
+    List<Book> showedListTemp = [];
     if (data != null) {
       myLib = List<String>.from(data["books"].map((id) => id));
       await Future.forEach(myLib, (id) async {
@@ -81,9 +85,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
           },
         );
-        showedList.add(bookAdded);
+        showedListTemp.add(bookAdded);
       });
     }
+    showedList = showedListTemp;
     await getListShelves();
   }
 
@@ -104,68 +109,74 @@ class _LibraryScreenState extends State<LibraryScreen> {
               if (snapshot.connectionState == ConnectionState.done) {
                 return TabBarView(
                   children: [
-                    ListView.separated(
-                      itemCount: showedList.length,
-                      itemBuilder: (context, index) => InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BookDetails(
-                                book: showedList[index],
+                    RefreshIndicator(
+                      onRefresh: fetchLibrary,
+                      child: ListView.separated(
+                        itemCount: showedList.length,
+                        itemBuilder: (context, index) => InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookDetails(
+                                  book: showedList[index],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: SummaryInfoBook(
-                          id: showedList[index].id,
-                          title: showedList[index].title,
-                          authors: showedList[index].authors,
-                          description: showedList[index].description,
-                          imgUrl: showedList[index].imageUrl,
-                          hasOptions: true,
+                            );
+                          },
+                          child: SummaryInfoBook(
+                            id: showedList[index].id,
+                            title: showedList[index].title,
+                            authors: showedList[index].authors,
+                            description: showedList[index].description,
+                            imgUrl: showedList[index].imageUrl,
+                            hasOptions: true,
+                          ),
+                        ),
+                        separatorBuilder: (_, __) => const SizedBox(
+                          height: 16,
                         ),
                       ),
-                      separatorBuilder: (_, __) => const SizedBox(
-                        height: 16,
-                      ),
                     ),
-                    ListView.builder(
-                      itemCount: listShelves.length,
-                      itemBuilder: (context, index) => InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailShelfScreen(
-                                shelfInfo: listShelves[index],
+                    RefreshIndicator(
+                      onRefresh: fetchLibrary,
+                      child: ListView.builder(
+                        itemCount: listShelves.length,
+                        itemBuilder: (context, index) => InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailShelfScreen(
+                                  shelfInfo: listShelves[index],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: Column(
-                          children: [
-                            ListTile(
-                              leading: Image.network(
-                                listShelves[index]["urlAvatarShelf"],
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: Image.network(
+                                  listShelves[index]["urlAvatarShelf"],
+                                ),
+                                title: Text(
+                                  listShelves[index].keys.first,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                                subtitle: Text(
+                                  '${listShelves[index].values.first.length} books',
+                                ),
+                                trailing: const Icon(
+                                  Icons.arrow_forward_outlined,
+                                  color: Colors.lightBlueAccent,
+                                ),
                               ),
-                              title: Text(
-                                listShelves[index].keys.first,
-                                style: const TextStyle(fontSize: 18),
+                              const Divider(
+                                height: 3,
+                                color: Colors.grey,
                               ),
-                              subtitle: Text(
-                                '${listShelves[index].values.first.length} books',
-                              ),
-                              trailing: const Icon(
-                                Icons.arrow_forward_outlined,
-                                color: Colors.lightBlueAccent,
-                              ),
-                            ),
-                            const Divider(
-                              height: 3,
-                              color: Colors.grey,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     )
