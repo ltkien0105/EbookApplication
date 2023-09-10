@@ -59,9 +59,8 @@ class GoogleBooksApi {
   static Future<Map<String, dynamic>> getBookById(String id) async {
     String url =
         '$volumePath/$id?fields=volumeInfo(title,authors,description,categories,imageLinks/thumbnail)';
-
+    url += '&key=$androidApiKey';
     final List<Map<String, dynamic>> results = await getBook(url);
-
     return results[0];
   }
 }

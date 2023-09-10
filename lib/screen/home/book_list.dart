@@ -192,6 +192,7 @@ class _BookListState extends ConsumerState<BookList> {
                               );
                             },
                             child: SummaryInfoBook(
+                              id: showedList[index].id,
                               authors: showedList[index].authors,
                               title: showedList[index].title,
                               description: showedList[index].description,

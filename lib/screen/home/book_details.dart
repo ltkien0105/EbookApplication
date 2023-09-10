@@ -319,6 +319,7 @@ class _BookDetailsState extends ConsumerState<BookDetails> {
                                 itemCount: showedList.length,
                                 itemBuilder: (context, index) {
                                   return SummaryInfoBook(
+                                    id: showedList[index].id,
                                     title: showedList[index].title,
                                     authors: showedList[index].authors,
                                     description: showedList[index].description,

@@ -1,11 +1,14 @@
-import 'package:ebook_application/apis/api.dart';
-import 'package:ebook_application/screen/home/book_details.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:ebook_application/apis/api.dart';
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/models/book.dart';
+import 'package:ebook_application/screen/home/book_details.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -19,6 +22,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
   late Future myFuture;
   List<String> myLib = [];
   List<Book> showedList = [];
+  List<Map<String, dynamic>> listShelves = [];
+
+  Future<void> getListShelves() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
+        .doc('libraries/${auth.currentUser!.uid}')
+        .collection('shelves')
+        .get();
+
+    final listIDShelves = snapshot.docs.map((doc) => doc.id).toList();
+
+    await Future.forEach(listIDShelves, (shelfID) async {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await firestore
+          .doc('libraries/${auth.currentUser!.uid}')
+          .collection('shelves')
+          .doc(shelfID)
+          .get();
+
+      List<String> booksID =
+          List<String>.from(snapshot.data()!['booksID'].map((id) => id));
+      String urlAvatarShelf = '';
+      if (booksID.isEmpty) {
+        urlAvatarShelf =
+            'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=';
+      } else {
+        final response = await http.get(Uri.parse(
+            'https://www.googleapis.com/books/v1/volumes/${booksID[0]}?fields=volumeInfo(imageLinks/thumbnail)&key=$androidApiKey'));
+        urlAvatarShelf =
+            json.decode(response.body)["volumeInfo"]["imageLinks"]["thumbnail"];
+      }
+      listShelves.add({shelfID: booksID, "urlAvatarShelf": urlAvatarShelf});
+    });
+  }
 
   Future<void> fetchLibrary() async {
     DocumentSnapshot<Map<String, dynamic>> booksID =
@@ -29,6 +64,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       myLib = List<String>.from(data["books"].map((id) => id));
       await Future.forEach(myLib, (id) async {
         final book = await GoogleBooksApi.getBookById(id);
+
         final bookAdded = Book.fromJson(
           {
             'id': id,
@@ -47,6 +83,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         showedList.add(bookAdded);
       });
     }
+    await getListShelves();
   }
 
   @override
@@ -64,7 +101,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
             future: myFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                print(showedList);
                 return TabBarView(
                   children: [
                     ListView.separated(
@@ -81,10 +117,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           );
                         },
                         child: SummaryInfoBook(
+                          id: showedList[index].id,
                           title: showedList[index].title,
                           authors: showedList[index].authors,
                           description: showedList[index].description,
                           imgUrl: showedList[index].imageUrl,
+                          hasOptions: true,
                         ),
                       ),
                       separatorBuilder: (_, __) => const SizedBox(
@@ -92,21 +130,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     ),
                     ListView.builder(
-                      itemCount: 3,
+                      itemCount: listShelves.length,
                       itemBuilder: (context, index) => InkWell(
                         onTap: () {},
                         child: Column(
                           children: [
                             ListTile(
                               leading: Image.network(
-                                'http://books.google.com/books/content?id=ZoECAAAAYAAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
+                                listShelves[index]["urlAvatarShelf"],
                               ),
-                              title: const Text(
-                                'My Shelf',
-                                style: TextStyle(fontSize: 18),
+                              title: Text(
+                                listShelves[index].keys.first,
+                                style: const TextStyle(fontSize: 18),
                               ),
-                              subtitle: const Text(
-                                '4 books',
+                              subtitle: Text(
+                                '${listShelves[index].values.first.length} books',
                               ),
                               trailing: const Icon(
                                 Icons.arrow_forward_outlined,

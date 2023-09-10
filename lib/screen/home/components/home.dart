@@ -204,6 +204,7 @@ class _HomeState extends ConsumerState<Home>
                                     );
                                   },
                                   child: SummaryInfoBook(
+                                    id: recentList[index].id,
                                     title: recentList[index].title,
                                     authors: recentList[index].authors,
                                     description: recentList[index].description,
