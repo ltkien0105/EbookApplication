@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ebook_application/screen/home/detail_shelf_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
@@ -132,7 +133,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ListView.builder(
                       itemCount: listShelves.length,
                       itemBuilder: (context, index) => InkWell(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailShelfScreen(
+                                shelfInfo: listShelves[index],
+                              ),
+                            ),
+                          );
+                        },
                         child: Column(
                           children: [
                             ListTile(
