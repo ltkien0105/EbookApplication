@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/size_config.dart';
 import 'package:ebook_application/screen/settings/profile.dart';
-import 'package:ebook_application/screen/settings/favorites.dart';
 import 'package:ebook_application/screen/sign_in/sign_in_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -41,25 +40,6 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
       body: Column(
         children: [
-          ListTile(
-            title: const Text('Favorites'),
-            leading: Icon(
-              Icons.favorite_border,
-              size: getProportionateScreenWidth(30),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const Favorite(),
-                ),
-              );
-            },
-          ),
-          Divider(
-            height: 1,
-            thickness: getProportionateScreenHeight(0.5),
-          ),
           ListTile(
             title: const Text('About'),
             leading: Icon(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/screen/home/components/custom_search_delegate.dart';
+import 'package:flutter_svg/svg.dart';
 
 class SearchField extends StatelessWidget {
   const SearchField(this.imgUrl, {super.key});
@@ -9,6 +11,13 @@ class SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String? img;
+
+    if (auth.currentUser != null) {
+      if (auth.currentUser!.photoURL != null) {
+        img = auth.currentUser!.photoURL;
+      }
+    }
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
@@ -30,12 +39,18 @@ class SearchField extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Image.network(
-                  imgUrl,
-                  fit: BoxFit.cover,
-                  height: 5,
-                  width: 5,
-                ),
+                child: img != null
+                    ? Image.network(
+                        img,
+                        fit: BoxFit.cover,
+                        height: 5,
+                        width: 5,
+                      )
+                    : SvgPicture.asset(
+                        'assets/images/profile_image_default.svg',
+                        width: 25,
+                        height: 25,
+                      ),
               ),
             ),
           ),

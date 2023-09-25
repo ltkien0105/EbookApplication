@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/size_config.dart';
+import 'package:ebook_application/providers/shelves_provider.dart';
 
-class SummaryInfoBook extends StatefulWidget {
+class SummaryInfoBook extends ConsumerStatefulWidget {
   const SummaryInfoBook({
     super.key,
     required this.id,
@@ -14,6 +16,9 @@ class SummaryInfoBook extends StatefulWidget {
     required this.description,
     required this.imgUrl,
     this.hasOptions = false,
+    this.displayedInShelf,
+    this.removeShelfOrLibrary,
+    this.removeLibrary = false,
   });
 
   final String id;
@@ -22,41 +27,21 @@ class SummaryInfoBook extends StatefulWidget {
   final String description;
   final String imgUrl;
   final bool hasOptions;
+  final String? displayedInShelf;
+  final VoidCallback? removeShelfOrLibrary;
+  final bool removeLibrary;
 
   @override
-  State<SummaryInfoBook> createState() => _SummaryInfoBookState();
+  ConsumerState<SummaryInfoBook> createState() => _SummaryInfoBookState();
 }
 
-class _SummaryInfoBookState extends State<SummaryInfoBook> {
-  List<String> listShelves = [];
-  List<String> listContainThisBook = [];
-
-  Future<void> getListShelves() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
-        .doc('libraries/${auth.currentUser!.uid}')
-        .collection('shelves')
-        .get();
-
-    listShelves = snapshot.docs.map((doc) => doc.id).toList();
-
-    await Future.forEach(listShelves, (shelfID) async {
-      DocumentSnapshot<Map<String, dynamic>> snapshot = await firestore
-          .doc('libraries/${auth.currentUser!.uid}')
-          .collection('shelves')
-          .doc(shelfID)
-          .get();
-
-      List<String> booksID =
-          List<String>.from(snapshot.data()!['booksID'].map((id) => id));
-
-      if (booksID.contains(widget.id)) {
-        listContainThisBook.add(shelfID);
-      }
-    });
-  }
-
+class _SummaryInfoBookState extends ConsumerState<SummaryInfoBook> {
   @override
   Widget build(BuildContext context) {
+    final shelves = ref.watch(shelvesProvider);
+
+    final listShelves = shelves.map((shelf) => shelf.name).toList();
+
     String showAuthors = widget.authors.join(', ');
     return Row(
       children: [
@@ -117,88 +102,121 @@ class _SummaryInfoBookState extends State<SummaryInfoBook> {
             itemBuilder: (_) => [
               const PopupMenuItem(
                 value: 'show list shelves',
-                child: Text("Add to shelves"),
+                child: Text("Add or remove from shelves"),
               ),
+              if (widget.removeLibrary)
+                const PopupMenuItem(
+                  value: 'remove from library',
+                  child: Text("Remove from library"),
+                ),
+              if (widget.displayedInShelf != null)
+                const PopupMenuItem(
+                  value: 'remove from shelves',
+                  child: Text("Remove from this shelves"),
+                ),
             ],
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'show list shelves') {
                 showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Add this book to shelves...'),
-                    content: FutureBuilder(
-                        future: getListShelves(),
-                        builder: (_, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            return ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: SizeConfig.screenHeight! * .05,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: listShelves.map((shelfId) {
-                                  return StatefulBuilder(
-                                    builder: (
-                                      BuildContext context,
-                                      void Function(void Function()) setState,
-                                    ) {
-                                      return ListTile(
-                                        leading: Checkbox(
-                                          value: listContainThisBook
-                                              .contains(shelfId),
-                                          onChanged: (newValue) async {
-                                            if (newValue == true) {
-                                              setState(() {
-                                                listContainThisBook
-                                                    .add(shelfId);
-                                              });
+                    context: context,
+                    builder: (_) {
+                      return AlertDialog(
+                        title: const Text(
+                          'Add or remove this book from shelves...',
+                        ),
+                        content: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: SizeConfig.screenHeight! * .05,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: listShelves.map((shelfId) {
+                              return StatefulBuilder(
+                                builder: (
+                                  BuildContext context,
+                                  void Function(void Function()) setState,
+                                ) {
+                                  final listContainThisBook =
+                                      shelves.map((shelf) {
+                                    if (shelf.booksIDs.contains(widget.id)) {
+                                      return shelf.name;
+                                    }
+                                  }).toList();
 
-                                              await firestore
-                                                  .doc(
-                                                      "libraries/${auth.currentUser!.uid}")
-                                                  .collection("shelves")
-                                                  .doc(shelfId)
-                                                  .update({
-                                                "booksID":
-                                                    FieldValue.arrayUnion(
-                                                        [widget.id])
-                                              });
-                                            } else {
+                                  return ListTile(
+                                    leading: Checkbox(
+                                      value:
+                                          listContainThisBook.contains(shelfId),
+                                      onChanged: (newValue) async {
+                                        if (newValue == true) {
+                                          for (var shelf in shelves) {
+                                            if (shelf.name == shelfId) {
                                               setState(() {
-                                                listContainThisBook
-                                                    .remove(shelfId);
+                                                shelf.add(widget.id);
                                               });
+                                              if (shelf.booksIDs.isNotEmpty) {
+                                                shelf.urlAvatarShelf =
+                                                    widget.imgUrl;
+                                              }
+                                            }
+                                          }
 
-                                              await firestore
-                                                  .doc(
-                                                      "libraries/${auth.currentUser!.uid}")
-                                                  .collection("shelves")
-                                                  .doc(shelfId)
-                                                  .update({
-                                                "booksID":
-                                                    FieldValue.arrayRemove(
-                                                        [widget.id])
+                                          await firestore
+                                              .doc(
+                                                  "libraries/${auth.currentUser!.uid}")
+                                              .collection("shelves")
+                                              .doc(shelfId)
+                                              .update({
+                                            "booksID": FieldValue.arrayUnion(
+                                                [widget.id])
+                                          });
+                                        } else {
+                                          for (var shelf in shelves) {
+                                            if (shelf.name == shelfId) {
+                                              setState(() {
+                                                shelf.remove(widget.id);
                                               });
                                             }
-                                          },
-                                          activeColor: Colors.red,
-                                        ),
-                                        title: Text(shelfId),
-                                      );
-                                    },
-                                  );
-                                }).toList(),
-                              ),
-                            );
-                          }
+                                          }
 
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }),
-                  ),
-                );
+                                          await firestore
+                                              .doc(
+                                                  "libraries/${auth.currentUser!.uid}")
+                                              .collection("shelves")
+                                              .doc(shelfId)
+                                              .update({
+                                            "booksID": FieldValue.arrayRemove(
+                                                [widget.id])
+                                          });
+                                        }
+                                      },
+                                      activeColor: Colors.red,
+                                    ),
+                                    title: Text(shelfId),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      );
+                    });
+              } else if (value == 'remove from shelves') {
+                await firestore
+                    .doc('libraries/${auth.currentUser!.uid}')
+                    .collection('shelves')
+                    .doc(widget.displayedInShelf!)
+                    .update({
+                  'booksID': FieldValue.arrayRemove([widget.id])
+                });
+                widget.removeShelfOrLibrary!();
+              } else if (value == 'remove from library') {
+                await firestore
+                    .doc('libraries/${auth.currentUser!.uid}')
+                    .update({
+                  'books': FieldValue.arrayRemove([widget.id])
+                });
+                widget.removeShelfOrLibrary!();
               }
             },
           )

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 //Firebase_auth
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/size_config.dart';
@@ -23,8 +22,7 @@ class BodySignUp extends StatefulWidget {
 }
 
 class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
-  final _usernameController = TextEditingController();
-  final _fullnameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool hasUserExist = false;
@@ -36,8 +34,7 @@ class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _fullnameController.dispose();
+    _fullNameController.dispose();
     _emailPhoneController.dispose();
     _passwordController.dispose();
 
@@ -63,8 +60,7 @@ class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
   Future<void> _signUp(
     String emailPhone,
     String password,
-    String username,
-    String fullname,
+    String fullName,
     DateTime birthday,
   ) async {
     try {
@@ -84,25 +80,12 @@ class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
                 await user.sendEmailVerification();
                 showInfoMessage('An email confirm has sent to: ${user.email}');
               }
-
-              await firestore.collection('accounts').doc(username).set({
-                'creation_time': user.metadata.creationTime,
-                'password': password,
-              });
-
-              await firestore.collection('users').doc(user.uid).set({
-                'username': firestore.doc('accounts/$username'),
-                'birthday': birthday,
-                'email': user.email,
-                'full_name': fullname,
-              });
             }
           },
         );
       } else {
         final Map<String, dynamic> userMetaData = {
-          'username': username,
-          'full_name': fullname,
+          'full_name': fullName,
           'birthday': birthday,
         };
         await SocialSignIn().signInWithPhoneNumber(
@@ -182,33 +165,11 @@ class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
                       child: Column(
                         children: [
                           InputField(
-                            label: 'Username',
-                            controller: _usernameController,
-                            hintText: 'Enter your username',
-                            validator: (username) {
-                              if (username == null || username.isEmpty) {
-                                return 'Username is required';
-                              }
-
-                              if (isUsernameValid(username)) {
-                                if (hasUserExist) {
-                                  return 'User has already existed';
-                                }
-                                return null;
-                              }
-
-                              return 'Enter a valid username';
-                            },
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          InputField(
                             label: 'Full name',
-                            controller: _fullnameController,
+                            controller: _fullNameController,
                             hintText: 'Enter your full name',
-                            validator: (fullname) {
-                              if (fullname == null || fullname.isEmpty) {
+                            validator: (fullName) {
+                              if (fullName == null || fullName.isEmpty) {
                                 return 'Full name is required';
                               }
 
@@ -278,28 +239,13 @@ class _BodySignUpState extends State<BodySignUp> with InputValidatorMixin {
                             child: TextButton(
                               onPressed: () async {
                                 FocusManager.instance.primaryFocus!.unfocus();
-                                try {
-                                  if(_usernameController.text.isNotEmpty) {
-                                    await firestore
-                                        .collection('accounts')
-                                        .doc(_usernameController.text)
-                                        .get()
-                                        .then((DocumentSnapshot docSnapshot) {
-                                      if (docSnapshot.exists) {
-                                        hasUserExist = true;
-                                      }
-                                    });
-                                  }
-                                } finally {
-                                  if (validate()) {
-                                    _signUp(
-                                      _emailPhoneController.text,
-                                      _passwordController.text,
-                                      _usernameController.text,
-                                      _fullnameController.text,
-                                      _birthday!,
-                                    );
-                                  }
+                                if (validate()) {
+                                  _signUp(
+                                    _emailPhoneController.text,
+                                    _passwordController.text,
+                                    _fullNameController.text,
+                                    _birthday!,
+                                  );
                                 }
                               },
                               style: ButtonStyle(

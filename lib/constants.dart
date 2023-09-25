@@ -7,11 +7,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //Firebase_auth
 import 'package:firebase_auth/firebase_auth.dart';
 
+//Firebase_auth
+import 'package:firebase_storage/firebase_storage.dart';
+
 //[auth] Firebase
 FirebaseAuth auth = FirebaseAuth.instance;
 
 //[cloud_firestore] Firebase
 FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+//[cloud_storage] Firebase
+FirebaseStorage storage = FirebaseStorage.instance;
 
 //Google API key
 String androidApiKey = 'AIzaSyCjG2bvfNfXnyQgK8Q88HR8w2bnekD0f_E';

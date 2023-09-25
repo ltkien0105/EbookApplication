@@ -1,55 +1,28 @@
-import 'package:ebook_application/screen/home/components/summary_info_book.dart';
+import 'package:ebook_application/providers/shelves_provider.dart';
 import 'package:flutter/material.dart';
 
-import 'package:ebook_application/apis/api.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/models/book.dart';
+import 'package:ebook_application/models/shelf.dart';
+import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 import 'package:ebook_application/screen/home/components/custom_search_delegate.dart';
 
-class DetailShelfScreen extends StatefulWidget {
-  const DetailShelfScreen({super.key, required this.shelfInfo});
+class DetailShelfScreen extends ConsumerStatefulWidget {
+  const DetailShelfScreen({super.key, required this.shelf});
 
-  final Map<String, dynamic> shelfInfo;
+  final Shelf shelf;
 
   @override
-  State<DetailShelfScreen> createState() => _DetailShelfScreenState();
+  ConsumerState<DetailShelfScreen> createState() => _DetailShelfScreenState();
 }
 
-class _DetailShelfScreenState extends State<DetailShelfScreen> {
-  late Future myFuture;
-  final List<Book> showedList = [];
+class _DetailShelfScreenState extends ConsumerState<DetailShelfScreen> {
+  List<Book> showedList = [];
 
   Future<void> fetchData() async {
-    final List<String> listID =
-        List<String>.from(widget.shelfInfo.values.first.map((id) => id));
-
-    if (listID.isNotEmpty) {
-      await Future.forEach(listID, (id) async {
-        final book = await GoogleBooksApi.getBookById(id);
-        final bookAdded = Book.fromJson(
-          {
-            'id': id,
-            'title': book['title'],
-            'authors': book.containsKey('authors') ? book['authors'] : [],
-            'categories':
-                book.containsKey('categories') ? book['categories'] : [],
-            'description': book.containsKey('description')
-                ? book['description']
-                : 'No description',
-            'imageUrl': book.containsKey('imageLinks')
-                ? book['imageLinks']['thumbnail']
-                : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-          },
-        );
-        showedList.add(bookAdded);
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    myFuture = fetchData();
+    showedList = await widget.shelf.fetchShelfDetails();
   }
 
   @override
@@ -62,6 +35,27 @@ class _DetailShelfScreenState extends State<DetailShelfScreen> {
               showSearch(context: context, delegate: CustomSearchDelegate());
             },
             icon: const Icon(Icons.search),
+          ),
+          PopupMenuButton(
+            onSelected: (value) async {
+              await firestore
+                  .doc('libraries/${auth.currentUser!.uid}')
+                  .collection('shelves')
+                  .doc(widget.shelf.name)
+                  .delete()
+                  .then(
+                (_) {
+                  ref.watch(shelvesProvider.notifier).remove(widget.shelf);
+                  Navigator.pop(context, false);
+                },
+              );
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete this shelf'),
+              ),
+            ],
           )
         ],
       ),
@@ -73,7 +67,7 @@ class _DetailShelfScreenState extends State<DetailShelfScreen> {
               SizedBox(
                 width: double.infinity,
                 child: Text(
-                  widget.shelfInfo.keys.first,
+                  widget.shelf.name,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -84,7 +78,7 @@ class _DetailShelfScreenState extends State<DetailShelfScreen> {
               SizedBox(
                 width: double.infinity,
                 child: Text(
-                  "${widget.shelfInfo.values.first.length} books",
+                  "${widget.shelf.booksIDs.length} books",
                   style: const TextStyle(fontSize: 20),
                   textAlign: TextAlign.left,
                 ),
@@ -101,7 +95,7 @@ class _DetailShelfScreenState extends State<DetailShelfScreen> {
                 height: 16,
               ),
               FutureBuilder(
-                future: myFuture,
+                future: fetchData(),
                 builder: (_, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return Expanded(
@@ -117,6 +111,12 @@ class _DetailShelfScreenState extends State<DetailShelfScreen> {
                           description: showedList[index].description,
                           imgUrl: showedList[index].imageUrl,
                           hasOptions: true,
+                          displayedInShelf: widget.shelf.name,
+                          removeShelfOrLibrary: () {
+                            setState(() {
+                              showedList.removeAt(index);
+                            });
+                          },
                         ),
                       ),
                     );

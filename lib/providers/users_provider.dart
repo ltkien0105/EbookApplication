@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ebook_application/models/user.dart';
 
-class UsersNotifier extends StateNotifier<User> {
-  UsersNotifier()
+class UserNotifier extends StateNotifier<User> {
+  UserNotifier()
       : super(User(
           id: '',
           username: '',
@@ -39,6 +39,6 @@ class UsersNotifier extends StateNotifier<User> {
   }
 }
 
-final usersNotifierProvider = StateNotifierProvider<UsersNotifier, User>(
-  (ref) => UsersNotifier(),
+final userNotifierProvider = StateNotifierProvider<UserNotifier, User>(
+  (ref) => UserNotifier(),
 );

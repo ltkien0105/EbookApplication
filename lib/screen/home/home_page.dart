@@ -1,4 +1,5 @@
 import 'package:ebook_application/constants.dart';
+import 'package:ebook_application/models/shelf.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ebook_application/screen/home/explore.dart';
@@ -7,15 +8,18 @@ import 'package:ebook_application/screen/home/chat_screen.dart';
 import 'package:ebook_application/screen/settings/settings.dart';
 import 'package:ebook_application/screen/home/library_screen.dart';
 import 'package:ebook_application/screen/home/components/home.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomePage extends StatefulWidget {
+import '../../providers/shelves_provider.dart';
+
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   late int _selectedPageIndex;
   late List<Widget> _pages;
   late PageController _pageController;
@@ -116,14 +120,6 @@ class _HomePageState extends State<HomePage> {
           ],
           currentIndex: _selectedPageIndex,
           onTap: (selectedPageIndex) {
-            // if (selectedPageIndex == 2) {
-            //   Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => const LibraryScreen(),
-            //     ),
-            //   );
-            // }
             setState(() {
               _selectedPageIndex = selectedPageIndex;
               _pageController.jumpToPage(selectedPageIndex);
@@ -173,6 +169,13 @@ class _HomePageState extends State<HomePage> {
                                         .set({
                                       "booksID": [],
                                     }).then((_) {
+                                      ref.watch(shelvesProvider.notifier).add(
+                                            Shelf(
+                                              name: shelfNameController.text,
+                                              booksIDs: [],
+                                              urlAvatarShelf: null,
+                                            ),
+                                          );
                                       Navigator.pop(context);
                                     });
                                   },
@@ -185,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                     backgroundColor: Colors.blue,
-                    child: Image.asset('assets/icons/chatbot.png'),
+                    child: const Icon(Icons.add),
                   )
                 : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

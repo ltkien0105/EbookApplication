@@ -1,105 +1,47 @@
-import 'dart:convert';
-
-import 'package:ebook_application/screen/home/detail_shelf_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:ebook_application/apis/api.dart';
-import 'package:ebook_application/constants.dart';
-import 'package:ebook_application/models/book.dart';
 import 'package:ebook_application/screen/home/book_details.dart';
+import 'package:ebook_application/providers/library_provider.dart';
+import 'package:ebook_application/providers/shelves_provider.dart';
+import 'package:ebook_application/screen/home/detail_shelf_screen.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
 
-class LibraryScreen extends StatefulWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> {
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  bool isLoad = true;
   late Future myFuture;
-  List<String> myLib = [];
-  List<Book> showedList = [];
-  List<Map<String, dynamic>> listShelves = [];
 
-  Future<void> getListShelves() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
-        .doc('libraries/${auth.currentUser!.uid}')
-        .collection('shelves')
-        .get();
-
-    final listIDShelves = snapshot.docs.map((doc) => doc.id).toList();
-    List<Map<String, dynamic>> listShelvesTemp = [];
-    await Future.forEach(listIDShelves, (shelfID) async {
-      DocumentSnapshot<Map<String, dynamic>> snapshot = await firestore
-          .doc('libraries/${auth.currentUser!.uid}')
-          .collection('shelves')
-          .doc(shelfID)
-          .get();
-
-      List<String> booksID =
-          List<String>.from(snapshot.data()!['booksID'].map((id) => id));
-      String urlAvatarShelf = '';
-      if (booksID.isEmpty) {
-        urlAvatarShelf =
-            'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=';
-      } else {
-        final response = await http.get(Uri.parse(
-            'https://www.googleapis.com/books/v1/volumes/${booksID[0]}?fields=volumeInfo(imageLinks/thumbnail)&key=$androidApiKey'));
-        urlAvatarShelf =
-            json.decode(response.body)["volumeInfo"]["imageLinks"]["thumbnail"];
-      }
-
-      listShelvesTemp.add({shelfID: booksID, "urlAvatarShelf": urlAvatarShelf});
-    });
-    setState(() {
-      listShelves = listShelvesTemp;
-    });
-  }
-
-  Future<void> fetchLibrary() async {
-    DocumentSnapshot<Map<String, dynamic>> booksID =
-        await firestore.doc("libraries/${auth.currentUser!.uid}").get();
-    final data = booksID.data();
-    List<Book> showedListTemp = [];
-    if (data != null) {
-      myLib = List<String>.from(data["books"].map((id) => id));
-      await Future.forEach(myLib, (id) async {
-        final book = await GoogleBooksApi.getBookById(id);
-
-        final bookAdded = Book.fromJson(
-          {
-            'id': id,
-            'title': book['title'],
-            'authors': book.containsKey('authors') ? book['authors'] : [],
-            'categories':
-                book.containsKey('categories') ? book['categories'] : [],
-            'description': book.containsKey('description')
-                ? book['description']
-                : 'No description',
-            'imageUrl': book.containsKey('imageLinks')
-                ? book['imageLinks']['thumbnail']
-                : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-          },
-        );
-        showedListTemp.add(bookAdded);
-      });
-    }
-    showedList = showedListTemp;
-    await getListShelves();
+  Future<void> fetchData(
+    LibraryNotifier libraryNotifier,
+    ShelvesNotifier shelvesNotifier,
+  ) async {
+    await libraryNotifier.fetchLibrary();
+    await shelvesNotifier.fetchShelves();
   }
 
   @override
   void initState() {
     super.initState();
-    myFuture = fetchLibrary();
+
+    myFuture = fetchData(
+      ref.read(libraryProvider.notifier),
+      ref.read(shelvesProvider.notifier),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final libraryNotifier = ref.watch(libraryProvider.notifier);
+    final shelvesNotifier = ref.watch(shelvesProvider.notifier);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -107,30 +49,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
             future: myFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
+                final library = ref.watch(libraryProvider);
+                final shelves = ref.watch(shelvesProvider);
                 return TabBarView(
                   children: [
                     RefreshIndicator(
-                      onRefresh: fetchLibrary,
+                      onRefresh: () {
+                        return fetchData(libraryNotifier, shelvesNotifier);
+                      },
                       child: ListView.separated(
-                        itemCount: showedList.length,
+                        itemCount: library.length,
                         itemBuilder: (context, index) => InkWell(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => BookDetails(
-                                  book: showedList[index],
+                                  book: library[index],
                                 ),
                               ),
                             );
                           },
                           child: SummaryInfoBook(
-                            id: showedList[index].id,
-                            title: showedList[index].title,
-                            authors: showedList[index].authors,
-                            description: showedList[index].description,
-                            imgUrl: showedList[index].imageUrl,
+                            id: library[index].id,
+                            title: library[index].title,
+                            authors: library[index].authors,
+                            description: library[index].description,
+                            imgUrl: library[index].imageUrl,
                             hasOptions: true,
+                            removeLibrary: true,
+                            removeShelfOrLibrary: () async {
+                              library.removeAt(index);
+                            },
                           ),
                         ),
                         separatorBuilder: (_, __) => const SizedBox(
@@ -139,16 +89,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     ),
                     RefreshIndicator(
-                      onRefresh: fetchLibrary,
+                      onRefresh: () {
+                        return fetchData(libraryNotifier, shelvesNotifier);
+                      },
                       child: ListView.builder(
-                        itemCount: listShelves.length,
+                        itemCount: shelves.length,
                         itemBuilder: (context, index) => InkWell(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            isLoad = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DetailShelfScreen(
-                                  shelfInfo: listShelves[index],
+                                  shelf: shelves[index],
                                 ),
                               ),
                             );
@@ -156,15 +108,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           child: Column(
                             children: [
                               ListTile(
-                                leading: Image.network(
-                                  listShelves[index]["urlAvatarShelf"],
-                                ),
+                                leading: shelves[index].urlAvatarShelf != null
+                                    ? Image.network(
+                                        shelves[index].urlAvatarShelf!,
+                                      )
+                                    : SvgPicture.asset(
+                                        'assets/images/book_placeholder.svg',
+                                        width: 50,
+                                        height: 50,
+                                      ),
                                 title: Text(
-                                  listShelves[index].keys.first,
+                                  shelves[index].name,
                                   style: const TextStyle(fontSize: 18),
                                 ),
                                 subtitle: Text(
-                                  '${listShelves[index].values.first.length} books',
+                                  '${shelves[index].booksIDs.length} books',
                                 ),
                                 trailing: const Icon(
                                   Icons.arrow_forward_outlined,
