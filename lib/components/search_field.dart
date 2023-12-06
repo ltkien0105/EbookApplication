@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/screen/home/components/custom_search_delegate.dart';
-import 'package:flutter_svg/svg.dart';
 
 class SearchField extends StatelessWidget {
   const SearchField(this.imgUrl, {super.key});
@@ -47,9 +47,9 @@ class SearchField extends StatelessWidget {
                         width: 5,
                       )
                     : SvgPicture.asset(
-                        'assets/images/profile_image_default.svg',
-                        width: 25,
-                        height: 25,
+                        'assets/images/profile_default.svg',
+                        width: 5,
+                        height: 5,
                       ),
               ),
             ),

@@ -1,17 +1,16 @@
-import 'dart:io';
+import 'package:flutter/material.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ebook_application/apis/api.dart';
+import 'package:ebook_application/size_config.dart';
 import 'package:ebook_application/models/book.dart';
+import 'package:ebook_application/screen/home/book_list.dart';
 import 'package:ebook_application/providers/books_provider.dart';
 import 'package:ebook_application/screen/home/book_details.dart';
 import 'package:ebook_application/screen/home/category_list.dart';
-import 'package:flutter/material.dart';
-
-import 'package:ebook_application/size_config.dart';
-import 'package:ebook_application/screen/home/book_list.dart';
 import 'package:ebook_application/screen/home/components/list_horizontal.dart';
 import 'package:ebook_application/screen/home/components/summary_info_book.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Home extends ConsumerStatefulWidget {
   const Home({super.key});
@@ -23,6 +22,7 @@ class Home extends ConsumerStatefulWidget {
 class _HomeState extends ConsumerState<Home>
     with AutomaticKeepAliveClientMixin<Home> {
   late final Future myFuture;
+  List<Book> recentList = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -38,16 +38,9 @@ class _HomeState extends ConsumerState<Home>
   ];
 
   Future<void> getDataToHomePage({
-    required int popularAmount,
     required int recentAmount,
   }) async {
     BooksNotifier booksNotifier = ref.read(booksProvider.notifier);
-
-    final List<Map<String, dynamic>>? listPopularBooks =
-        await GoogleBooksApi.getBooksByFields(
-      "''",
-      maxResults: popularAmount,
-    );
 
     final List<Map<String, dynamic>>? listRecentBooks =
         await GoogleBooksApi.getBooksByFields(
@@ -58,197 +51,186 @@ class _HomeState extends ConsumerState<Home>
       isNewest: true,
     );
 
-    if (listPopularBooks != null) {
-      booksNotifier.addBookList(listPopularBooks, isPopular: true);
-    }
-
     if (listRecentBooks != null) {
       booksNotifier.addBookList(listRecentBooks, isRecent: true);
     }
+
+    final books = ref.read(booksProvider);
+
+    recentList = books.where((book) {
+      if (book.imageUrl != null) {
+        return book.isRecent && book.imageUrl!.contains('books.google.com');
+      }
+      return false;
+    }).toList();
   }
 
   @override
   void initState() {
     super.initState();
-    myFuture = getDataToHomePage(popularAmount: 10, recentAmount: 10);
+    myFuture = getDataToHomePage(recentAmount: 10);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FutureBuilder(
-        future: myFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.connectionState == ConnectionState.done) {
-            final bookProvider = ref.watch(booksProvider);
-            final popularList = bookProvider
-                .where((book) =>
-                    book.isPopular &&
-                    book.imageUrl.contains('books.google.com'))
-                .toList();
-            final recentList = bookProvider
-                .where((book) =>
-                    book.isRecent && book.imageUrl.contains('books.google.com'))
-                .toList();
-            return WillPopScope(
-              onWillPop: () {
-                exit(0);
-              },
-              child: SafeArea(
-                child: Container(
-                  margin: const EdgeInsets.all(16),
+    return WillPopScope(
+      onWillPop: () {
+        return Future.value(true);
+      },
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Expanded(
+                flex: 2,
+                child: ListHorizontal(
+                  category: 'popular',
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              Expanded(
+                flex: 1,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 300,
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Expanded(
-                        flex: 2,
-                        child: ListHorizontal(bookList: popularList),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 300,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Categories',
-                                      textAlign: TextAlign.start,
-                                      style: TextStyle(
-                                        fontSize:
-                                            getProportionateScreenWidth(20),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const CategoryList(),
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(
-                                          Icons.arrow_forward_outlined),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // const Spacer(),
-                              SizedBox(
-                                height: getProportionateScreenHeight(40),
-                                child: ListView.separated(
-                                  separatorBuilder: (context, index) =>
-                                      SizedBox(
-                                    width: getProportionateScreenWidth(10),
-                                  ),
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: categoryList.length,
-                                  itemBuilder: (context, index) =>
-                                      filterButton(categoryList[index]),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      Expanded(
-                        flex: 4,
-                        child: Column(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: Text(
-                                'Recently Added',
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenWidth(20),
-                                ),
+                            Text(
+                              'Categories',
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: getProportionateScreenWidth(20),
                               ),
                             ),
-                            SizedBox(
-                              height: getProportionateScreenHeight(16),
-                            ),
-                            Expanded(
-                              child: ListView.separated(
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(
-                                  height: 16,
-                                ),
-                                itemCount: recentList.length,
-                                itemBuilder: (context, index) => InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BookDetails(
-                                          book: recentList[index],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: SummaryInfoBook(
-                                    id: recentList[index].id,
-                                    title: recentList[index].title,
-                                    authors: recentList[index].authors,
-                                    description: recentList[index].description,
-                                    imgUrl: recentList[index].imageUrl,
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CategoryList(),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_forward_outlined),
                             ),
                           ],
                         ),
                       ),
+                      // const Spacer(),
+                      SizedBox(
+                        height: getProportionateScreenHeight(40),
+                        child: ListView.separated(
+                          separatorBuilder: (context, index) => SizedBox(
+                            width: getProportionateScreenWidth(10),
+                          ),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: categoryList.length,
+                          itemBuilder: (context, index) =>
+                              filterButton(context, categoryList[index]),
+                        ),
+                      )
                     ],
                   ),
                 ),
               ),
-            );
-          }
-
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        });
-  }
-
-  ElevatedButton filterButton(Category category) {
-    return ElevatedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BookList(category: category),
+              const SizedBox(
+                height: 16,
+              ),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        'Recently Added',
+                        textAlign: TextAlign.start,
+                        style: TextStyle(
+                          fontSize: getProportionateScreenWidth(20),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: getProportionateScreenHeight(16),
+                    ),
+                    Expanded(
+                      child: FutureBuilder(
+                        future: myFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return ListView.separated(
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(
+                                height: 16,
+                              ),
+                              itemCount: recentList.length,
+                              itemBuilder: (context, index) => InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BookDetails(
+                                        book: recentList[index],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: SummaryInfoBook(
+                                  id: recentList[index].id,
+                                  title: recentList[index].title,
+                                  authors: recentList[index].authors,
+                                  description: recentList[index].description,
+                                  imgUrl: recentList[index].imageUrl,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
-      style: const ButtonStyle(
-        backgroundColor: MaterialStatePropertyAll(Colors.blueAccent),
-        foregroundColor: MaterialStatePropertyAll(Colors.white),
-        shape: MaterialStatePropertyAll(
-          StadiumBorder(),
         ),
-      ),
-      child: Text(
-        category.specificName,
       ),
     );
   }
+}
+
+ElevatedButton filterButton(BuildContext context, Category category) {
+  return ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BookList(category: category),
+        ),
+      );
+    },
+    style: const ButtonStyle(
+      backgroundColor: MaterialStatePropertyAll(Colors.blueAccent),
+      foregroundColor: MaterialStatePropertyAll(Colors.white),
+      shape: MaterialStatePropertyAll(
+        StadiumBorder(),
+      ),
+    ),
+    child: Text(
+      category.specificName,
+    ),
+  );
 }

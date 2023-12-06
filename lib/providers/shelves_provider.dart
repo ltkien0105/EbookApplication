@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/models/shelf.dart';
@@ -10,15 +10,26 @@ import 'package:ebook_application/models/shelf.dart';
 class ShelvesNotifier extends StateNotifier<List<Shelf>> {
   ShelvesNotifier() : super([]);
 
-  Future<void> fetchShelves() async {
+  Future<List<String>> fetchOnlyShelvesName() async {
     QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
         .doc('libraries/${auth.currentUser!.uid}')
         .collection('shelves')
         .get();
 
-    final shelvesIDs = snapshot.docs.map((doc) => doc.id).toList();
+    final List<String> shelvesNames =
+    List<String>.from(snapshot.docs.map((doc) {
+      return doc.id;
+    }));
+
+    return shelvesNames;
+  }
+
+  Future<void> fetchShelves() async {
     List<Shelf> listShelvesTemp = [];
-    await Future.forEach(shelvesIDs, (shelfID) async {
+
+    List<String> shelvesNames = await fetchOnlyShelvesName();
+
+    await Future.forEach(shelvesNames, (shelfID) async {
       DocumentSnapshot<Map<String, dynamic>> snapshot = await firestore
           .doc('libraries/${auth.currentUser!.uid}')
           .collection('shelves')
@@ -26,24 +37,28 @@ class ShelvesNotifier extends StateNotifier<List<Shelf>> {
           .get();
 
       List<String> booksIDs =
-          List<String>.from(snapshot.data()!['booksID'].map((id) => id));
-      String? urlAvatarShelf;
+      List<String>.from(snapshot.data()!['booksID'].map((id) => id));
+
+      Map<String, String?> booksIDAndUrl = {};
 
       if (booksIDs.isNotEmpty) {
-        final response = await http.get(Uri.parse(
-            'https://www.googleapis.com/books/v1/volumes/${booksIDs[0]}?fields=volumeInfo(imageLinks/thumbnail)&key=$androidApiKey'));
+        await Future.forEach(booksIDs, (bookId) async {
+          final response = await http.get(Uri.parse(
+              'https://www.googleapis.com/books/v1/volumes/$bookId?fields=volumeInfo(imageLinks/thumbnail)&key=$androidApiKey'));
 
-        if (json.decode(response.body).length != 0) {
-          urlAvatarShelf = json.decode(response.body)["volumeInfo"]
-              ["imageLinks"]["thumbnail"];
-        }
+          if (json
+              .decode(response.body)
+              .length != 0) {
+            booksIDAndUrl[bookId] = json.decode(response.body)["volumeInfo"]
+            ["imageLinks"]["thumbnail"];
+          }
+        });
       }
 
       listShelvesTemp.add(
         Shelf(
           name: shelfID,
-          booksIDs: booksIDs,
-          urlAvatarShelf: urlAvatarShelf,
+          bookIdAndUrl: booksIDAndUrl,
         ),
       );
     });
@@ -60,8 +75,47 @@ class ShelvesNotifier extends StateNotifier<List<Shelf>> {
   void remove(Shelf shelf) {
     state = state.where((element) => element.name != shelf.name).toList();
   }
+
+  Future<void> addToSpecificShelf({
+    required String shelfName,
+    required String bookId,
+    required String? imgUrl,
+  }) async {
+    await firestore
+        .doc("libraries/${auth.currentUser!.uid}")
+        .collection("shelves")
+        .doc(shelfName)
+        .update({
+      "booksID": FieldValue.arrayUnion([bookId])
+    });
+
+    for (var shelf in state) {
+      if (shelf.name == shelfName) {
+        shelf.add(bookId, imgUrl);
+      }
+    }
+  }
+
+  Future<void> removeBookFromSpecificShelf({
+    required String shelfName,
+    required String bookId,
+  }) async {
+    await firestore
+        .doc('libraries/${auth.currentUser!.uid}')
+        .collection('shelves')
+        .doc(shelfName)
+        .update({
+      'booksID': FieldValue.arrayRemove([bookId])
+    });
+
+    for (var shelf in state) {
+      if (shelf.name == shelfName) {
+        shelf.remove(bookId);
+      }
+    }
+  }
 }
 
 final shelvesProvider = StateNotifierProvider<ShelvesNotifier, List<Shelf>>(
-  (ref) => ShelvesNotifier(),
+      (ref) => ShelvesNotifier(),
 );

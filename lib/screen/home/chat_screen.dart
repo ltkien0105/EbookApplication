@@ -18,21 +18,19 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
 
   void chatComplete() async {
+    // final messageRequest = _messageController.text += '###';
     final messageRequest = _messageController.text;
+    final request =
+        CompleteText(model: TextDavinci3Model(), prompt: messageRequest);
 
-    final request = ChatCompleteText(
-      model: GptTurbo0301ChatModel(),
-      messages: [Messages(role: Role.user, content: messageRequest)],
-    );
-
-    final response = await openAI.onChatCompletion(request: request);
+    final response = await openAI.onCompletion(request: request);
 
     for (var element in response!.choices) {
       setState(() {
         messageHistory.insert(
           0,
           Message(
-            content: element.message!.content,
+            content: element.text,
             isUser: false,
           ),
         );

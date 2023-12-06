@@ -9,60 +9,23 @@ class BooksNotifier extends StateNotifier<List<Book>> {
     state = [...state, book];
   }
 
-  void addBookList(List<Map<String, dynamic>> listBooks, {
+  void addBookList(
+    List<Map<String, dynamic>> listBooks, {
     bool isPopular = false,
     bool isRecent = false,
   }) {
-    for (var i = 0; i < listBooks.length; i++) {
-      final book = listBooks[i];
-      Book bookAdded = Book.fromJson(
-        {
-          'id': book['id'],
-          'title': book['volumeInfo']['title'],
-          'authors': book['volumeInfo'].containsKey('authors')
-              ? book['volumeInfo']['authors']
-              : [],
-          'categories': book['volumeInfo'].containsKey('categories')
-              ? book['volumeInfo']['categories']
-              : [],
-          'description': book['volumeInfo'].containsKey('description')
-              ? book['volumeInfo']['description']
-              : 'No description',
-          'imageUrl': book['volumeInfo'].containsKey('imageLinks')
-              ? book['volumeInfo']['imageLinks']['thumbnail']
-              : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-        },
-      );
-
+    for (final book in listBooks) {
+      final bookAdded = Book.fromJson(book);
       bookAdded.isPopular = isPopular;
       bookAdded.isRecent = isRecent;
       add(bookAdded);
     }
   }
 
-  void update(String id,
-      String title,
-      String author,
-      String description,
-      String imageUrl,) {
-    // state = [
-    //   for (final book in state)
-    //     if (book.id == id)
-    //       Book(
-    //           title: title,
-    //           author: author,
-    //           description: description,
-    //           imageUrl: imageUrl)
-    //     else
-    //       book
-    // ];
-  }
-
   void updateFavoriteStatus(Book bookUpdated) {
     state = [
       for (final book in state)
-        if (book.id == bookUpdated.id) bookUpdated else
-          book
+        if (book.id == bookUpdated.id) bookUpdated else book
     ];
   }
 
@@ -98,5 +61,5 @@ class BooksNotifier extends StateNotifier<List<Book>> {
 }
 
 final booksProvider = StateNotifierProvider<BooksNotifier, List<Book>>(
-      (ref) => BooksNotifier(),
+  (ref) => BooksNotifier(),
 );

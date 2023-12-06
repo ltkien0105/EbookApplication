@@ -1,7 +1,3 @@
-import 'package:hive/hive.dart';
-
-part 'book.g.dart';
-
 enum Category {
   architecture('Architecture', 'architecture'),
   bioAutobio('Biography & Autobiography', 'biography'),
@@ -26,8 +22,10 @@ enum Category {
   medical('Medical', 'medical'),
   photography('Photography', 'photography'),
   poetry('Poetry', 'poetry'),
+  popular('Popular', 'popular'),
   psychology('Psychology', 'psychology'),
   reference('Reference', 'reference'),
+  recent('Recent', 'recent'),
   science('Science', 'science'),
   techEngineering('Technology & Engineering', 'engineering'),
   travel('Travel', 'travel');
@@ -38,7 +36,6 @@ enum Category {
   final String searchTerm;
 }
 
-@HiveType(typeId: 1)
 class Book {
   Book({
     required this.id,
@@ -50,46 +47,69 @@ class Book {
     this.isPopular = false,
     this.isRecent = false,
     this.isFavorite = false,
-
   });
 
-  @HiveField(0)
   final String id;
-
-  @HiveField(1)
   final String title;
-
-  @HiveField(2)
   final List<String> authors;
-
-  @HiveField(3)
   final List<String> categories;
-
-  @HiveField(4)
   final String description;
-
-  // @HiveField(5)
-  // DateTime createdAt;
-
-  @HiveField(5)
-  final String imageUrl;
-
-  @HiveField(6)
+  final String? imageUrl;
   bool isPopular;
-
-  @HiveField(7)
   bool isRecent;
-
-  @HiveField(8)
   bool isFavorite;
 
-  factory Book.fromJson(Map<String, dynamic> json) =>
-      Book(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        authors: List<String>.from(json['authors'].map((x) => x)),
-        categories: List<String>.from(json['categories'].map((x) => x)),
-        description: json['description'] as String,
-        imageUrl: json['imageUrl'] as String,
-      );
+  factory Book.fromJson(Map<String, dynamic> json) {
+    final String id = json['id'] as String;
+    final String title = json['volumeInfo']['title'] as String;
+    final List<String> authors = json['volumeInfo'].containsKey('authors')
+        ? List<String>.from(
+            json['volumeInfo']['authors'].map((author) => author))
+        : [];
+    final List<String> categories = json['volumeInfo'].containsKey('categories')
+        ? List<String>.from(
+            json['volumeInfo']['categories'].map((category) => category))
+        : [];
+    final String description = json['volumeInfo'].containsKey('description')
+        ? json['volumeInfo']['description'] as String
+        : 'No description';
+    final String? imageUrl = json['volumeInfo'].containsKey('imageLinks')
+        ? json['volumeInfo']['imageLinks']['thumbnail'] as String
+        : null;
+
+    return Book(
+      id: id,
+      title: title,
+      authors: authors,
+      categories: categories,
+      description: description,
+      imageUrl: imageUrl,
+    );
+  }
+
+  factory Book.fetchSpecificBook(Map<String, dynamic> json) {
+    final String id = json['id'] as String;
+    final String title = json['title'] as String;
+    final List<String> authors = json.containsKey('authors')
+        ? List<String>.from(json['authors'].map((author) => author))
+        : [];
+    final List<String> categories = json.containsKey('categories')
+        ? List<String>.from(json['categories'].map((category) => category))
+        : [];
+    final String description = json.containsKey('description')
+        ? json['description'] as String
+        : 'No description';
+    final String? imageUrl = json.containsKey('imageLinks')
+        ? json['imageLinks']['thumbnail'] as String
+        : null;
+
+    return Book(
+      id: id,
+      title: title,
+      authors: authors,
+      categories: categories,
+      description: description,
+      imageUrl: imageUrl,
+    );
+  }
 }

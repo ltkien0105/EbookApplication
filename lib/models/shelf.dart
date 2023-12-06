@@ -3,35 +3,20 @@ import 'package:ebook_application/models/book.dart';
 
 class Shelf {
   final String name;
-  final List<String> booksIDs;
-  String? urlAvatarShelf;
+  Map<String, String?> bookIdAndUrl;
 
   Shelf({
     required this.name,
-    required this.booksIDs,
-    required this.urlAvatarShelf,
+    required this.bookIdAndUrl,
   });
 
   Future<List<Book>> fetchShelfDetails() async {
     final List<Book> showedList = [];
-    if (booksIDs.isNotEmpty) {
-      await Future.forEach(booksIDs, (id) async {
-        final book = await GoogleBooksApi.getBookById(id);
-        final bookAdded = Book.fromJson(
-          {
-            'id': id,
-            'title': book['title'],
-            'authors': book.containsKey('authors') ? book['authors'] : [],
-            'categories':
-            book.containsKey('categories') ? book['categories'] : [],
-            'description': book.containsKey('description')
-                ? book['description']
-                : 'No description',
-            'imageUrl': book.containsKey('imageLinks')
-                ? book['imageLinks']['thumbnail']
-                : 'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
-          },
-        );
+    if (bookIdAndUrl.isNotEmpty) {
+      await Future.forEach(bookIdAndUrl.entries, (bookId) async {
+        final book = await GoogleBooksApi.getBookById(bookId.key);
+        book['id'] = bookId.key;
+        final bookAdded = Book.fromJson(book);
         showedList.add(bookAdded);
       });
     }
@@ -39,15 +24,11 @@ class Shelf {
     return showedList;
   }
 
-  void add(String id) {
-    booksIDs.add(id);
+  void add(String id, String? url) {
+    bookIdAndUrl[id] = url;
   }
 
   void remove(String id) {
-    booksIDs.remove(id);
-
-    if (booksIDs.isEmpty) {
-      urlAvatarShelf = null;
-    }
+    bookIdAndUrl.remove(id);
   }
 }

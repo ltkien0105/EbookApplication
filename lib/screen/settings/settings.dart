@@ -41,9 +41,17 @@ class _SettingsState extends State<Settings> {
       body: Column(
         children: [
           ListTile(
-            title: const Text('About'),
+            title: const Text('Profiles'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const Profile(),
+                ),
+              );
+            },
             leading: Icon(
-              Icons.info_outline,
+              Icons.account_circle,
               size: getProportionateScreenWidth(30),
             ),
           ),
@@ -58,25 +66,6 @@ class _SettingsState extends State<Settings> {
             },
             leading: Icon(
               Icons.logout,
-              size: getProportionateScreenWidth(30),
-            ),
-          ),
-          Divider(
-            height: 1,
-            thickness: getProportionateScreenHeight(0.5),
-          ),
-          ListTile(
-            title: const Text('Profiles'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const Profile(),
-                ),
-              );
-            },
-            leading: Icon(
-              Icons.account_circle,
               size: getProportionateScreenWidth(30),
             ),
           ),

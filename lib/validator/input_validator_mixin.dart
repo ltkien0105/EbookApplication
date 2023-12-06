@@ -1,6 +1,4 @@
 mixin InputValidatorMixin {
-  bool isUsernameValid(String username) => username.length >= 8 && username.length <= 30;
-
   bool isPasswordValid(String password) => password.length >= 8;
 
   bool isEmailValid(String email) {

@@ -72,13 +72,15 @@ class _BodySignInState extends State<BodySignIn> with InputValidatorMixin {
               'User is not be found!',
             );
           }
-          if (error.code == 'wrong-password') {
+
+          if (error.code == 'network-request-failed') {
             context.showErrorMessage(
-              'Password is incorrect!',
+              'Network error!',
             );
           }
         }
       } catch (error) {
+        if (!mounted) return;
         context.showErrorMessage(error as String);
       } finally {
         if (mounted) {
@@ -311,7 +313,9 @@ class _BodySignInState extends State<BodySignIn> with InputValidatorMixin {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SignUpScreen(),
+                              builder: (context) => SignUpScreen(
+                                isEmail: _isEmail,
+                              ),
                             ),
                           );
                         },

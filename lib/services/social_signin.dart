@@ -1,4 +1,3 @@
-import 'package:ebook_application/screen/sign_in/otp_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +5,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 import 'package:ebook_application/constants.dart';
-
-import '../screen/home/home_page.dart';
+import 'package:ebook_application/screen/home/home_page.dart';
+import 'package:ebook_application/screen/sign_in/otp_screen.dart';
 
 class SocialSignIn {
   GoogleSignInAccount? _gUser;
@@ -26,18 +25,44 @@ class SocialSignIn {
       accessToken: gAuth.accessToken,
     );
 
-    await auth
-        .signInWithCredential(credential)
-        .then((UserCredential userCredential) {
-      if (userCredential.user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const HomePage(),
-          ),
+    try {
+      await auth
+          .signInWithCredential(credential)
+          .then((UserCredential userCredential) {
+        if (userCredential.user != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const HomePage(),
+            ),
+          );
+        }
+      });
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+      if (e.code == 'invalid-credential') {
+        context.showErrorMessage(
+          'Error occurred while accessing credentials. Try again.',
         );
       }
-    });
+    } catch (e) {
+      if (!context.mounted) return;
+      context.showErrorMessage(
+        'Error occurred using Google Sign-In. Try again.',
+      );
+    }
+  }
+
+  Future<Map<String, String>?> getGoogleAccountToken() async {
+    if (gUser != null) {
+      final gAuth = await gUser!.authentication;
+      return {
+        'idToken': gAuth.idToken!,
+        'accessToken': gAuth.accessToken!,
+      };
+    }
+
+    return null;
   }
 
   Future<void> signInWithFacebook(BuildContext context) async {
@@ -70,6 +95,12 @@ class SocialSignIn {
       phoneNumber: '+84${phoneNumber.substring(1)}',
       verificationCompleted: (PhoneAuthCredential credential) {},
       verificationFailed: (FirebaseAuthException error) {
+        if (error.code == 'network-request-failed') {
+          context.showErrorMessage(
+            'Network error!',
+          );
+        }
+
         if (error.code == 'invalid-phone-number') {
           context.showErrorMessage('The provided phone number is not valid.');
         }

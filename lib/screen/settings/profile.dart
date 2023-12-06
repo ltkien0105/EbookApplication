@@ -1,6 +1,7 @@
 import 'dart:io';
-
+import 'package:ebook_application/size_config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg_provider/flutter_svg_provider.dart';
 
 import 'package:path/path.dart' as path;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/components/input_field.dart';
 import 'package:ebook_application/components/date_picker_field.dart';
 import 'package:ebook_application/validator/input_validator_mixin.dart';
+import 'package:ebook_application/screen/settings/change_password_screen.dart';
 
 class Profile extends ConsumerStatefulWidget {
   const Profile({super.key});
@@ -28,7 +30,9 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
   String? photoUrl;
   late TextEditingController fullNameController;
   late TextEditingController emailController;
-  late DateTime birthday;
+  DateTime? dateOfBirth;
+  bool isLoading = false;
+  bool isFirstLoad = true;
 
   Future<void> _cropImage(String pathImg) async {
     CroppedFile? croppedFile = await ImageCropper().cropImage(
@@ -69,33 +73,65 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
     }
   }
 
+  Future<void> changeInfo() async {
+    if (fullNameController.text != user!.displayName) {
+      await user!.updateDisplayName(fullNameController.text);
+    }
+
+    if (dateOfBirth != null) {
+      await firestore.doc('users/${user!.uid}').get().then((snapshot) async {
+        if (snapshot.exists) {
+          await firestore.doc('users/${user!.uid}').update({
+            'dateOfBirth': dateOfBirth,
+          });
+        } else {
+          await firestore.doc('users/${user!.uid}').set({
+            'dateOfBirth': dateOfBirth,
+          });
+        }
+      });
+    }
+
+    if (photoFile != null) {
+      final storageRef = storage.ref();
+      final avatarRef = storageRef.child('avatars/${user!.uid}.jpg');
+      await avatarRef.putFile(File(photoFile!));
+      final url = await avatarRef.getDownloadURL();
+      await user!.updatePhotoURL(url);
+    }
+  }
+
   Future<void> applyChanges() async {
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
-
-      final storageRef = storage.ref();
-      final avatarRef = storageRef.child('avatars/${user!.uid}.jpg');
-
-      // final avatarName = '${user!.uid}.jpg';
-      await avatarRef.putFile(File(photoFile!));
-      final url = await avatarRef.getDownloadURL();
-      await firestore.doc('users/${user!.uid}').update({
-        'fullName': fullNameController.text,
-        'email': emailController.text,
-        'birthday': birthday,
-        'imgUrl': url,
-      });
+      await changeInfo();
     }
   }
 
   @override
   void initState() {
     super.initState();
-
+    print(user);
     fullNameController = TextEditingController(
         text: user!.displayName != null ? user!.displayName! : 'No display');
-    emailController = TextEditingController(
-        text: user!.email != null ? user!.email! : 'No display');
+
+    if (user!.email != null && user!.email!.isNotEmpty) {
+      emailController = TextEditingController(text: user!.email);
+    } else {
+      if (user!.providerData[0].email != null &&
+          user!.providerData[0].email!.isNotEmpty) {
+        emailController =
+            TextEditingController(text: user!.providerData[0].email);
+      } else {
+        emailController = TextEditingController(text: 'No display');
+      }
+    }
+
+    firestore.doc('users/${user!.uid}').get().then((value) {
+      if (value.data()?['dateOfBirth'] != null) {
+        dateOfBirth = value.data()?['dateOfBirth']!.toDate();
+      }
+    });
 
     if (user!.photoURL != null) {
       photoUrl = user!.photoURL!;
@@ -120,116 +156,148 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
         ),
         body: SafeArea(
           child: FutureBuilder(
-              // future: userNotifier.getUser(),
+              future: isFirstLoad
+                  ? firestore.doc('users/${user!.uid}').get()
+                  : null,
               builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            } else {
-              return CustomScrollView(
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Center(
-                            child: Column(
-                              children: [
-                                GestureDetector(
-                                  onTap: () async {
-                                    final XFile? imageAvatar = await picker
-                                        .pickImage(source: ImageSource.camera);
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else {
+                  return CustomScrollView(
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Center(
+                                child: Column(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final XFile? imageAvatar =
+                                            await picker.pickImage(
+                                                source: ImageSource.camera);
 
-                                    if (imageAvatar != null) {
-                                      _cropImage(imageAvatar.path);
-                                    }
-                                  },
-                                  child: CircleAvatar(
-                                    // backgroundColor: Colors.black,
-                                    radius: 40,
-                                    foregroundImage: photoFile != null
-                                        ? FileImage(File(photoFile!))
-                                        : photoUrl != null
-                                            ? CachedNetworkImageProvider(
-                                                photoUrl!)
-                                            : Image.asset(
-                                                    'assets/images/profile_image_default.svg')
-                                                as ImageProvider,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          Form(
-                            key: formKey,
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 16),
-                                InputField(
-                                  controller: fullNameController,
-                                  label: 'Full name',
-                                  validator: (fullName) {
-                                    if (fullName == null || fullName.isEmpty) {
-                                      return 'Full name is required';
-                                    }
-
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                InputField(
-                                  controller: emailController,
-                                  label: 'Email',
-                                  validator: (email) {
-                                    if (email == null || email.isEmpty) {
-                                      return 'Email is required';
-                                    }
-
-                                    if (isEmailValid(email)) return null;
-
-                                    return 'Enter a valid email';
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                const SizedBox(
-                                  width: double.infinity,
-                                  height: 22,
-                                  child: Text(
-                                    'Birthday',
-                                    textAlign: TextAlign.start,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                        if (imageAvatar != null) {
+                                          _cropImage(imageAvatar.path);
+                                        }
+                                      },
+                                      child: CircleAvatar(
+                                        // backgroundColor: Colors.black,
+                                        radius: 40,
+                                        foregroundImage: photoFile != null
+                                            ? FileImage(File(photoFile!))
+                                            : photoUrl != null
+                                                ? CachedNetworkImageProvider(
+                                                    photoUrl!)
+                                                : const Svg(
+                                                        'assets/images/profile_default.svg')
+                                                    as ImageProvider,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                DatePickerField(
-                                  birthday: DateTime.now(),
-                                  getBirthday: (birthday) {
-                                    this.birthday = birthday;
-                                  },
+                              ),
+                              const SizedBox(height: 40),
+                              Form(
+                                key: formKey,
+                                child: Column(
+                                  children: [
+                                    const SizedBox(height: 16),
+                                    InputField(
+                                      controller: fullNameController,
+                                      label: 'Full name',
+                                      validator: (fullName) {
+                                        if (fullName == null ||
+                                            fullName.isEmpty) {
+                                          return 'Full name is required';
+                                        }
+
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    InputField(
+                                      controller: emailController,
+                                      label: 'Email',
+                                      enabled: false,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const SizedBox(
+                                      width: double.infinity,
+                                      height: 22,
+                                      child: Text(
+                                        'Date of birth',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DatePickerField(
+                                      dateOfBirth: dateOfBirth,
+                                      getDateOfBirth: (dateOfBirth) {
+                                        this.dateOfBirth = dateOfBirth;
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (user!.providerData[0].providerId ==
+                                        'password')
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const ChangePasswordScreen()));
+                                        },
+                                        child: const Text('Change password'),
+                                      ),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        isFirstLoad = false;
+                                        setState(() {
+                                          isLoading = true;
+                                        });
+                                        await applyChanges();
+                                        setState(() {
+                                          isLoading = false;
+                                        });
+                                        if (!mounted) return;
+                                        context.showInfoMessage(
+                                            'Change info successfully!');
+                                      },
+                                      child: SizedBox(
+                                        width: SizeConfig.screenWidth! * .3,
+                                        child: Center(
+                                          child: isLoading
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : const Text('Apply Changes'),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    applyChanges();
-                                  },
-                                  child: const Text('Apply Changes'),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
+                              )
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              );
-            }
-          }),
+                    ],
+                  );
+                }
+              }),
         ),
       ),
     );

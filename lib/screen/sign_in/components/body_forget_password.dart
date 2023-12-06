@@ -75,6 +75,7 @@ class _BodyForgetState extends State<BodyForget> with InputValidatorMixin {
         showInfoMessage();
       } on FirebaseAuthException catch (error) {
         if (error.code == 'user-not-found') {
+          if (!mounted) return;
           context.showErrorMessage('Email has not used yet');
         }
       } finally {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:ebook_application/screen/sign_in/sign_in_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
 import 'package:ebook_application/size_config.dart';
 import 'package:ebook_application/components/continue_button.dart';
+import 'package:ebook_application/screen/sign_in/sign_in_screen.dart';
 import 'package:ebook_application/screen/splash/components/splash_content.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 class Body extends StatefulWidget {
   const Body({super.key});

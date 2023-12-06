@@ -9,13 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/size_config.dart';
-import 'package:ebook_application/models/book.dart';
 import 'package:ebook_application/theme/theme_config.dart';
 import 'package:ebook_application/screen/home/home_page.dart';
 import 'package:ebook_application/screen/sign_in/sign_in_screen.dart';
 import 'package:ebook_application/screen/splash/splash_screen.dart';
-
-import 'boxes/boxes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +24,6 @@ Future<void> main() async {
 
   //Init hive
   await Hive.initFlutter();
-  Hive.registerAdapter(BookAdapter());
-  bookBox = await Hive.openBox<Book>('bookBox');
   await Hive.openBox('settingsBox');
 
   runApp(const ProviderScope(child: MyApp()));

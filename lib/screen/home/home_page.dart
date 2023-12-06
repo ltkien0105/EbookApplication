@@ -2,11 +2,11 @@ import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/models/shelf.dart';
 import 'package:flutter/material.dart';
 
-import 'package:ebook_application/screen/home/explore.dart';
+import 'package:ebook_application/screen/explore/explore.dart';
 import 'package:ebook_application/components/search_field.dart';
 import 'package:ebook_application/screen/home/chat_screen.dart';
 import 'package:ebook_application/screen/settings/settings.dart';
-import 'package:ebook_application/screen/home/library_screen.dart';
+import 'package:ebook_application/screen/library/library_screen.dart';
 import 'package:ebook_application/screen/home/components/home.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,46 +56,46 @@ class _HomePageState extends ConsumerState<HomePage> {
         appBar: AppBar(
           title: _selectedPageIndex == 3
               ? const Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 25,
-                  ),
-                )
+            'Settings',
+            style: TextStyle(
+              fontSize: 25,
+            ),
+          )
               : null,
           actions: _selectedPageIndex != 3
               ? [
-                  SearchField(imgUrl!),
-                ]
+            SearchField(imgUrl!),
+          ]
               : null,
           automaticallyImplyLeading: false,
           centerTitle: true,
           bottom: _selectedPageIndex == 2
               ? const TabBar(
-                  labelColor: Colors.blue,
-                  unselectedLabelColor: Colors.grey,
-                  indicator: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.blue,
-                        width: 3,
-                      ),
-                    ),
-                  ),
-                  tabs: [
-                    Tab(
-                      child: Text(
-                        'All books',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                    Tab(
-                      child: Text(
-                        'Shelves',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ],
-                )
+            labelColor: Colors.blue,
+            unselectedLabelColor: Colors.grey,
+            indicator: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.blue,
+                  width: 3,
+                ),
+              ),
+            ),
+            tabs: [
+              Tab(
+                child: Text(
+                  'Library',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+              Tab(
+                child: Text(
+                  'Shelves',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          )
               : null,
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -128,69 +128,68 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         floatingActionButton: _selectedPageIndex == 0
             ? FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChatScreen(),
-                    ),
-                  );
-                },
-                backgroundColor: Colors.blue,
-                child: Image.asset('assets/icons/chatbot.png'),
-              )
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ChatScreen(),
+              ),
+            );
+          },
+          backgroundColor: Colors.blue,
+          child: Image.asset('assets/icons/chatbot.png'),
+        )
             : _selectedPageIndex == 2
-                ? FloatingActionButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) {
-                          final TextEditingController shelfNameController =
-                              TextEditingController();
+            ? FloatingActionButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (_) {
+                final TextEditingController shelfNameController =
+                TextEditingController();
 
-                          return AlertDialog(
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                TextField(
-                                  controller: shelfNameController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Shelf name',
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    firestore
-                                        .doc(
-                                            'libraries/${auth.currentUser!.uid}')
-                                        .collection('shelves')
-                                        .doc(shelfNameController.text)
-                                        .set({
-                                      "booksID": [],
-                                    }).then((_) {
-                                      ref.watch(shelvesProvider.notifier).add(
-                                            Shelf(
-                                              name: shelfNameController.text,
-                                              booksIDs: [],
-                                              urlAvatarShelf: null,
-                                            ),
-                                          );
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            ),
-                          );
+                return AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      TextField(
+                        controller: shelfNameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Shelf name',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          firestore
+                              .doc(
+                              'libraries/${auth.currentUser!.uid}')
+                              .collection('shelves')
+                              .doc(shelfNameController.text)
+                              .set({
+                            "booksID": [],
+                          }).then((_) {
+                            ref.watch(shelvesProvider.notifier).add(
+                              Shelf(
+                                name: shelfNameController.text,
+                                bookIdAndUrl: {},
+                              ),
+                            );
+                            Navigator.pop(context);
+                          });
                         },
-                      );
-                    },
-                    backgroundColor: Colors.blue,
-                    child: const Icon(Icons.add),
-                  )
-                : null,
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          backgroundColor: Colors.blue,
+          child: const Icon(Icons.add),
+        )
+            : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: PageView(
           controller: _pageController,

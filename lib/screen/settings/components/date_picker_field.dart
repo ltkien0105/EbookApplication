@@ -5,17 +5,17 @@ import 'package:ebook_application/size_config.dart';
 class DatePickerField extends StatefulWidget {
   const DatePickerField({
     super.key,
-    required this.getBirthday,
+    required this.getDateOfBirth,
   });
 
-  final Function(DateTime chosenBirthday) getBirthday;
+  final Function(DateTime chosenDateOfBirth) getDateOfBirth;
 
   @override
   State<DatePickerField> createState() => _DatePickerFieldState();
 }
 
 class _DatePickerFieldState extends State<DatePickerField> {
-  DateTime? birthday;
+  DateTime? dateOfBirth;
 
   String getFormattedDate(DateTime date) {
     String day = date.day.toString();
@@ -45,7 +45,9 @@ class _DatePickerFieldState extends State<DatePickerField> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
-            birthday == null ? 'No date chosen' : getFormattedDate(birthday!),
+            dateOfBirth == null
+                ? 'No date chosen'
+                : getFormattedDate(dateOfBirth!),
             style: TextStyle(
               fontSize: getProportionateScreenWidth(15.5),
               color: const Color.fromARGB(240, 98, 98, 98),
@@ -54,7 +56,7 @@ class _DatePickerFieldState extends State<DatePickerField> {
         ),
         TextButton.icon(
           onPressed: () async {
-            final chosenBirthday = await showDatePicker(
+            final chosenDateOfBirth = await showDatePicker(
               context: context,
               initialDate: DateTime.now(),
               firstDate: DateTime.fromMicrosecondsSinceEpoch(1),
@@ -62,10 +64,10 @@ class _DatePickerFieldState extends State<DatePickerField> {
             );
 
             setState(() {
-              birthday = chosenBirthday;
+              dateOfBirth = chosenDateOfBirth;
             });
 
-            widget.getBirthday(chosenBirthday!);
+            widget.getDateOfBirth(chosenDateOfBirth!);
           },
           icon: const Icon(
             Icons.date_range,

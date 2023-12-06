@@ -1,4 +1,5 @@
 import 'package:ebook_application/models/message.dart';
+import 'package:ebook_application/size_config.dart';
 import 'package:flutter/material.dart';
 
 //Cloud firestore
@@ -24,7 +25,7 @@ String androidApiKey = 'AIzaSyCjG2bvfNfXnyQgK8Q88HR8w2bnekD0f_E';
 String iosApiKey = 'AIzaSyCK7sunNqV6dUfswngY1ALs5IaxbEawNAY';
 
 //OpenAI API key
-String openAiAPIKey = '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';
+String openAiAPIKey = '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';
 
 //Message History
 final List<Message> messageHistory = [];
@@ -44,16 +45,48 @@ extension ShowSnackbar on BuildContext {
     );
   }
 
-  void showInfoMessage(String message) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.yellow),
+  void showInfoMessage(String message,
+      {bool hasUndo = false,
+      void Function()? onPressed,
+      void Function()? onTimeOut}) {
+    Widget contentHasUndo = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        SizedBox(
+          width: SizeConfig.screenWidth! * 0.6,
+          child: Text(
+            message,
+            style: const TextStyle(color: Colors.white),
+          ),
         ),
-        backgroundColor: Colors.grey,
-        behavior: SnackBarBehavior.floating,
-      ),
+        TextButton(
+          onPressed: onPressed,
+          child: const Text(
+            'Undo',
+            style: TextStyle(color: Colors.white),
+          ),
+        )
+      ],
     );
+
+    ScaffoldMessenger.of(this)
+        .showSnackBar(
+          SnackBar(
+            content: hasUndo
+                ? contentHasUndo
+                : Text(
+                    message,
+                    style: const TextStyle(color: Colors.yellow),
+                  ),
+            backgroundColor: Colors.grey,
+            behavior: SnackBarBehavior.floating,
+          ),
+        )
+        .closed
+        .then((SnackBarClosedReason reason) {
+      if (reason == SnackBarClosedReason.timeout) {
+        onTimeOut!();
+      }
+    });
   }
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:ebook_application/constants.dart';
 import 'package:ebook_application/size_config.dart';
+import 'package:ebook_application/models/shelf.dart';
 import 'package:ebook_application/providers/shelves_provider.dart';
 
 class SummaryInfoBook extends ConsumerStatefulWidget {
@@ -16,20 +19,14 @@ class SummaryInfoBook extends ConsumerStatefulWidget {
     required this.description,
     required this.imgUrl,
     this.hasOptions = false,
-    this.displayedInShelf,
-    this.removeShelfOrLibrary,
-    this.removeLibrary = false,
   });
 
   final String id;
   final String title;
   final List<String> authors;
   final String description;
-  final String imgUrl;
+  final String? imgUrl;
   final bool hasOptions;
-  final String? displayedInShelf;
-  final VoidCallback? removeShelfOrLibrary;
-  final bool removeLibrary;
 
   @override
   ConsumerState<SummaryInfoBook> createState() => _SummaryInfoBookState();
@@ -38,22 +35,30 @@ class SummaryInfoBook extends ConsumerStatefulWidget {
 class _SummaryInfoBookState extends ConsumerState<SummaryInfoBook> {
   @override
   Widget build(BuildContext context) {
-    final shelves = ref.watch(shelvesProvider);
-
-    final listShelves = shelves.map((shelf) => shelf.name).toList();
+    List<Shelf> shelves = ref.watch(shelvesProvider);
+    final listShelvesNames = shelves.map((shelf) => shelf.name).toList();
 
     String showAuthors = widget.authors.join(', ');
+
     return Row(
       children: [
         Card(
           elevation: 16,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: CachedNetworkImage(
-              imageUrl: widget.imgUrl,
-              fit: BoxFit.fill,
-              width: 130,
-            ),
+            child: widget.imgUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: widget.imgUrl!,
+                    fit: BoxFit.fill,
+                    width: 130,
+                  )
+                : Opacity(
+                    opacity: 0.3,
+                    child: SvgPicture.asset(
+                      'assets/images/book_placeholder.svg',
+                      width: 130,
+                    ),
+                  ),
           ),
         ),
         SizedBox(
@@ -104,119 +109,92 @@ class _SummaryInfoBookState extends ConsumerState<SummaryInfoBook> {
                 value: 'show list shelves',
                 child: Text("Add or remove from shelves"),
               ),
-              if (widget.removeLibrary)
-                const PopupMenuItem(
-                  value: 'remove from library',
-                  child: Text("Remove from library"),
-                ),
-              if (widget.displayedInShelf != null)
-                const PopupMenuItem(
-                  value: 'remove from shelves',
-                  child: Text("Remove from this shelves"),
-                ),
             ],
             onSelected: (value) async {
               if (value == 'show list shelves') {
                 showDialog(
-                    context: context,
-                    builder: (_) {
-                      return AlertDialog(
-                        title: const Text(
-                          'Add or remove this book from shelves...',
+                  context: context,
+                  builder: (_) {
+                    return AlertDialog(
+                      title: const Text(
+                        'Add or remove this book from shelves...',
+                      ),
+                      content: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: SizeConfig.screenHeight! * .05,
                         ),
-                        content: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: SizeConfig.screenHeight! * .05,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: listShelves.map((shelfId) {
-                              return StatefulBuilder(
-                                builder: (
-                                  BuildContext context,
-                                  void Function(void Function()) setState,
-                                ) {
-                                  final listContainThisBook =
-                                      shelves.map((shelf) {
-                                    if (shelf.booksIDs.contains(widget.id)) {
-                                      return shelf.name;
-                                    }
-                                  }).toList();
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: listShelvesNames.map((shelfName) {
+                            return StatefulBuilder(
+                              builder: (
+                                BuildContext context,
+                                void Function(void Function()) setState,
+                              ) {
+                                List<String?> listContainThisBook =
+                                    shelves.map((shelf) {
+                                  if (shelf.bookIdAndUrl.keys
+                                      .contains(widget.id)) {
+                                    return shelf.name;
+                                  }
+                                }).toList();
 
-                                  return ListTile(
-                                    leading: Checkbox(
-                                      value:
-                                          listContainThisBook.contains(shelfId),
-                                      onChanged: (newValue) async {
-                                        if (newValue == true) {
-                                          for (var shelf in shelves) {
-                                            if (shelf.name == shelfId) {
-                                              setState(() {
-                                                shelf.add(widget.id);
-                                              });
-                                              if (shelf.booksIDs.isNotEmpty) {
-                                                shelf.urlAvatarShelf =
-                                                    widget.imgUrl;
-                                              }
-                                            }
-                                          }
+                                return ListTile(
+                                  leading: Checkbox(
+                                    value:
+                                        listContainThisBook.contains(shelfName),
+                                    onChanged: (newValue) async {
+                                      if (newValue == true) {
+                                        await firestore
+                                            .doc(
+                                                'libraries/${auth.currentUser!.uid}')
+                                            .update(
+                                          {
+                                            'books.${widget.id}':
+                                                FieldValue.arrayUnion(
+                                                    [shelfName])
+                                          },
+                                        );
 
-                                          await firestore
-                                              .doc(
-                                                  "libraries/${auth.currentUser!.uid}")
-                                              .collection("shelves")
-                                              .doc(shelfId)
-                                              .update({
-                                            "booksID": FieldValue.arrayUnion(
-                                                [widget.id])
-                                          });
-                                        } else {
-                                          for (var shelf in shelves) {
-                                            if (shelf.name == shelfId) {
-                                              setState(() {
-                                                shelf.remove(widget.id);
-                                              });
-                                            }
-                                          }
+                                        await ref
+                                            .watch(shelvesProvider.notifier)
+                                            .addToSpecificShelf(
+                                              shelfName: shelfName,
+                                              bookId: widget.id,
+                                              imgUrl: widget.imgUrl,
+                                            );
+                                        setState(() {});
+                                      } else {
+                                        await firestore
+                                            .doc(
+                                                'libraries/${auth.currentUser!.uid}')
+                                            .update({
+                                          'books.${widget.id}':
+                                              FieldValue.arrayRemove(
+                                                  [shelfName])
+                                        });
 
-                                          await firestore
-                                              .doc(
-                                                  "libraries/${auth.currentUser!.uid}")
-                                              .collection("shelves")
-                                              .doc(shelfId)
-                                              .update({
-                                            "booksID": FieldValue.arrayRemove(
-                                                [widget.id])
-                                          });
-                                        }
-                                      },
-                                      activeColor: Colors.red,
-                                    ),
-                                    title: Text(shelfId),
-                                  );
-                                },
-                              );
-                            }).toList(),
-                          ),
+                                        await ref
+                                            .watch(shelvesProvider.notifier)
+                                            .removeBookFromSpecificShelf(
+                                              shelfName: shelfName,
+                                              bookId: widget.id,
+                                            );
+                                        setState(() {});
+                                      }
+                                    },
+                                    activeColor: Colors.red,
+                                  ),
+                                  title: Text(shelfName),
+                                );
+                              },
+                            );
+                          }).toList(),
                         ),
-                      );
-                    });
-              } else if (value == 'remove from shelves') {
-                await firestore
-                    .doc('libraries/${auth.currentUser!.uid}')
-                    .collection('shelves')
-                    .doc(widget.displayedInShelf!)
-                    .update({
-                  'booksID': FieldValue.arrayRemove([widget.id])
-                });
-                widget.removeShelfOrLibrary!();
-              } else if (value == 'remove from library') {
-                await firestore
-                    .doc('libraries/${auth.currentUser!.uid}')
-                    .update({
-                  'books': FieldValue.arrayRemove([widget.id])
-                });
-                widget.removeShelfOrLibrary!();
+                      ),
+                    );
+                  },
+                );
               }
             },
           )
