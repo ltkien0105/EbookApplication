@@ -21,11 +21,11 @@ FirebaseFirestore firestore = FirebaseFirestore.instance;
 FirebaseStorage storage = FirebaseStorage.instance;
 
 //Google API key
-String androidApiKey = 'AIzaSyCjG2bvfNfXnyQgK8Q88HR8w2bnekD0f_E';
-String iosApiKey = 'AIzaSyCK7sunNqV6dUfswngY1ALs5IaxbEawNAY';
+String androidApiKey = 'YOUR ANDROID KEY';
+String iosApiKey = 'YOUR IOS KEY';
 
 //OpenAI API key
-String openAiAPIKey = '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';
+String openAiAPIKey = 'YOUR OPENAI API KEY';
 
 //Message History
 final List<Message> messageHistory = [];
