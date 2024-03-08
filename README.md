@@ -27,4 +27,4 @@ If you are a book lover, this application is for you. You can read books from Go
 5. In the lib folder, create `firebase-options.dart` file.
 6. Modify content of `firebase-options.dart` file file to match `firebase-options.example.dart` file, you must replace ANDROID and IOS API KEY parameter.
 7. Run `flutter run` command to run this project.
-8. Enjoy this application (feel free to delete `.env.exanple` and `firebase-options.dart` file)
+8. Enjoy this application (feel free to delete `.env.exanple` and `firebase-options.example.dart` file)
