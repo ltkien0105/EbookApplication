@@ -1,16 +1,19 @@
-# ebook_application
+# Ebook Application
 
-A new Flutter project.
+A Flutter project created to supply a convenient application for reading ebook instead physical ones.
+If you are a book lover, this application is for you. You can read books from Google Books, download them for offline reading, and save them to your library and shelf.
 
-## Getting Started
+## Main Features
 
-This project is a starting point for a Flutter application.
+<li>Sign in/ Sign up with Email, Google and Facebook</li>
+<li>A huge numbers of books from Google Books</li>
+<li>Download ebook for offline</li>
+<li>Read ebook with night mode</li>
+<li>Save book to library and shelf</li>
 
-A few resources to get you started if this is your first Flutter project:
+## TechStack used
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+<li>Dart</li>
+<li>Flutter</li>
+<li>Firebase</li>
+<li>Google Books API</li>

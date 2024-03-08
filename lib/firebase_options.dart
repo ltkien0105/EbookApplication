@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
     projectId: 'flutter-ebook-a',
     databaseURL: 'https://flutter-ebook-a-default-rtdb.firebaseio.com',
     storageBucket: 'flutter-ebook-a.appspot.com',
-    androidClientId: '1017605429774-o6g99s4o6q4jgf4v7h12e773gq5d12ol.apps.googleusercontent.com',
+    androidClientId: '1017605429774-1jgu12g8dpgcsvfkohi75e80j581nsfa.apps.googleusercontent.com',
     iosClientId: '1017605429774-rp4ov3kl3o1a0bfudjebem13c6ovrv7m.apps.googleusercontent.com',
     iosBundleId: 'com.example.ebookApplication',
   );

@@ -74,10 +74,8 @@ class _HomeState extends ConsumerState<Home>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return WillPopScope(
-      onWillPop: () {
-        return Future.value(true);
-      },
+    return PopScope(
+      canPop: true,
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.all(16),

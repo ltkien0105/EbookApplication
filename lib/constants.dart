@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 //Firebase_auth
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 //[auth] Firebase
 FirebaseAuth auth = FirebaseAuth.instance;
@@ -21,11 +22,11 @@ FirebaseFirestore firestore = FirebaseFirestore.instance;
 FirebaseStorage storage = FirebaseStorage.instance;
 
 //Google API key
-String androidApiKey = 'YOUR ANDROID KEY';
-String iosApiKey = 'YOUR IOS KEY';
+String androidApiKey = dotenv.env['ANDROID_API_KEY']!;
+String iosApiKey = dotenv.env['IOS_API_KEY']!;
 
 //OpenAI API key
-String openAiAPIKey = 'YOUR OPENAI API KEY';
+String openAiAPIKey = dotenv.env['OPENAI_API_KEY']!;
 
 //Message History
 final List<Message> messageHistory = [];

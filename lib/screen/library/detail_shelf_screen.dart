@@ -41,12 +41,12 @@ class _DetailShelfScreenState extends ConsumerState<DetailShelfScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () {
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (_) {
         if (hasDeleted) {
           Navigator.pop(context, widget.shelf);
         }
-        return Future.value(true);
       },
       child: Scaffold(
         appBar: AppBar(

@@ -12,7 +12,9 @@ class GoogleBooksApi {
     final Uri uri = Uri.parse(url);
 
     final data = await http.get(uri);
+
     final response = data.body;
+
 
     if (!json.decode(response).containsKey("items")) {
       return [json.decode(response)["volumeInfo"]];
@@ -43,6 +45,7 @@ class GoogleBooksApi {
       url += '&orderBy=newest';
     }
     url += '&key=$androidApiKey';
+
 
     final int cutStringPosition = url.indexOf('&');
     final String cutString = url.substring(cutStringPosition + 1);

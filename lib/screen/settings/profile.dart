@@ -111,7 +111,6 @@ class _ProfileState extends ConsumerState<Profile> with InputValidatorMixin {
   @override
   void initState() {
     super.initState();
-    print(user);
     fullNameController = TextEditingController(
         text: user!.displayName != null ? user!.displayName! : 'No display');
 
