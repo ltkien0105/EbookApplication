@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ebook Application</string>
-    <string name="facebook_app_id">248974191249423</string>
-    <string name="fb_login_protocol_scheme">fb248974191249423</string>
-    <string name="facebook_client_token">ce5fbbae50f90f721de4fc7d3e8f3d1d</string>
+
+    <string name="facebook_app_id">764535362283236</string>
+    <string name="fb_login_protocol_scheme">fb764535362283236</string>
+    <string name="facebook_client_token">b6c3f64d9a352689cde692e9f6f40e2e</string>
 </resources>
